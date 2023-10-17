@@ -1,3 +1,11 @@
+package main
+
+import (
+	"flag"
+	"fmt"
+	"net/http"
+)
+
 var fileServer http.Handler
 
 func main() {
@@ -35,7 +43,7 @@ func main() {
 
 	/* Start server*/
 	doLog(true, "Starting server...")
-	err = server.ListenAndServeTLS("fullchain.pem", "privkey.pem")
+	err := server.ListenAndServeTLS("fullchain.pem", "privkey.pem")
 	if err != nil {
 		doLog(true, "ListenAndServeTLS: %v", err)
 		panic(err)
