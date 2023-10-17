@@ -2,4 +2,4 @@
 git pull
 go clean
 go build
-killall goMMO
+killall goMMOServ
