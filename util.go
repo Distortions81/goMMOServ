@@ -142,7 +142,6 @@ func reportPanic(format string, args ...interface{}) {
 			doLog(true, "wrote panic.log")
 		}
 
-		//DoLog(false, buf)
 		doLog(true, buf)
 	}
 }
