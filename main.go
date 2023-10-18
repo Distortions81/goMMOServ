@@ -8,7 +8,6 @@ import (
 
 var (
 	fileServer http.Handler
-	wasmMode   = false
 )
 
 const (

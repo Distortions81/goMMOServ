@@ -64,10 +64,6 @@ func doLog(withTrace bool, format string, args ...interface{}) {
 
 func logDaemon() {
 
-	if wasmMode {
-		return
-	}
-
 	go func() {
 		defer reportPanic("logDaemon")
 
@@ -102,10 +98,6 @@ func logDaemon() {
 /* Prep logger */
 func startLog() {
 	defer reportPanic("startLog")
-
-	if wasmMode {
-		return
-	}
 
 	t := time.Now()
 
