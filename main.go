@@ -22,7 +22,7 @@ func main() {
 	//Parse launch params
 	devMode := flag.Bool("dev", false, "dev mode enable")
 	bindIP := flag.String("ip", "", "IP to bind to")
-	bindPort := flag.Int("port", 443, "port to bind to for HTTPS"
+	bindPort := flag.Int("port", 443, "port to bind to for HTTPS")
 	flag.Parse()
 
 	//Start logger
