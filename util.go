@@ -12,6 +12,39 @@ import (
 	"runtime/debug"
 )
 
+const (
+	hdFileName = "heapDump.dat"
+	pLogName   = "panic.log"
+)
+
+func reportPanic(format string, args ...interface{}) {
+	if r := recover(); r != nil {
+
+		if !wasmMode {
+			doLog(false, "Writing '%v' file.", hdFileName)
+			f, err := os.Create(hdFileName)
+			if err == nil {
+				debug.WriteHeapDump(f.Fd())
+				f.Close()
+				doLog(true, "wrote heapDump")
+			} else {
+				doLog(false, "Failed to write '%v' file.", hdFileName)
+			}
+		}
+
+		_, filename, line, _ := runtime.Caller(4)
+		input := fmt.Sprintf(format, args...)
+		buf := fmt.Sprintf(
+			"(GAME CRASH)\nBUILD:v%v-%v\nLabel:%v File: %v Line: %v\nError:%v\n\nStack Trace:\n%v\n",
+			version, buildInfo, input, filepath.Base(filename), line, r, string(debug.Stack()))
+
+		if !wasmMode {
+			os.WriteFile(pLogName, []byte(buf), 0660)
+			doLog(true, "wrote %v", pLogName)
+		}
+	}
+}
+
 /* Generic unzip []byte */
 func UncompressZip(data []byte) []byte {
 	defer reportPanic("UncompressZip")
@@ -112,34 +145,4 @@ func byteArrayToUint64(i []byte) uint64 {
 		return 0
 	}
 	return binary.LittleEndian.Uint64(i)
-}
-
-var hdFileName = "heapDump.dat"
-
-func reportPanic(format string, args ...interface{}) {
-	if r := recover(); r != nil {
-
-		if !wasmMode {
-			doLog(false, "Writing '%v' file.", hdFileName)
-			f, err := os.Create(hdFileName)
-			if err == nil {
-				debug.WriteHeapDump(f.Fd())
-				f.Close()
-				doLog(true, "wrote heapDump")
-			} else {
-				doLog(false, "Failed to write '%v' file.", hdFileName)
-			}
-		}
-
-		_, filename, line, _ := runtime.Caller(4)
-		input := fmt.Sprintf(format, args...)
-		buf := fmt.Sprintf(
-			"(GAME CRASH)\nBUILD:v%v-%v\nLabel:%v File: %v Line: %v\nError:%v\n\nStack Trace:\n%v\n",
-			version, buildInfo, input, filepath.Base(filename), line, r, string(debug.Stack()))
-
-		if !wasmMode {
-			os.WriteFile("panic.log", []byte(buf), 0660)
-			doLog(true, "wrote panic.log")
-		}
-	}
 }
