@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"time"
 )
 
 var (
@@ -17,6 +18,7 @@ const (
 
 func main() {
 	defer reportPanic("main")
+	defer time.Sleep(time.Second)
 
 	//Parse launch params
 	devMode := flag.Bool("dev", false, "dev mode enable")
