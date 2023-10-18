@@ -4,6 +4,7 @@ import (
 	"log"
 	"net/http"
 	"sync"
+	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -24,31 +25,37 @@ func siteHandler(w http.ResponseWriter, r *http.Request) {
 	fileServer.ServeHTTP(w, r)
 }
 
-const scPrefix = "<html><head><title>goSnake Scoreboard</title>"
-const colsSetup = "<style>.column{float:left}.left{width:20%}.middle{width:30%}.right{width:50%}.row:after{content:\"\";display:table;clear:both}</style>"
-const header = "<script>function autoRefresh(){window.location=window.location.href;}setInterval('autoRefresh()', 5000);</script></head><body bgcolor=black>"
-const cols = "<div class=\"row\"><div class=\"column left\" style=\"color:white;font-size:150%%;\"><h2>%v</h2><p>%v</p></div><div class=\"column middle\" style=\"color:white;font-size:150%%;\"><h2>%v</h2><p>%v</p></div><div class=\"column right\" style=\"color:white;font-size:150%%;\"><h2>%v</h2><p>%v</p></div></div>"
-const scSuffix = "</p></body></html>"
+var (
+	numConnections     int = 0
+	numConnectionsLock sync.Mutex
 
-var numConnections int = 0
-var numConnectionsLock sync.Mutex
+	playerList map[uint32]*playerData
+	pListLock  sync.RWMutex
+)
 
 func handleConnection(conn *websocket.Conn) {
 	if conn == nil {
 		return
 	}
-
+	player := &playerData{conn: conn, lastPing: time.Now()}
 	addConnection()
 	for {
-		_, _, err := conn.ReadMessage()
+		_, data, err := conn.ReadMessage()
 
 		if err != nil {
 			doLog(true, "Error on connection read: %v", err)
 
 			killConnection(conn, true)
+
+			player.conn = nil
+
+			pListLock.Lock()
+			delete(playerList, player.id)
+			pListLock.Unlock()
+
 			break
 		}
-		//newParser(data, player)
+		newParser(data, player)
 	}
 }
 
