@@ -141,7 +141,5 @@ func reportPanic(format string, args ...interface{}) {
 			os.WriteFile("panic.log", []byte(buf), 0660)
 			doLog(true, "wrote panic.log")
 		}
-
-		doLog(true, buf)
 	}
 }
