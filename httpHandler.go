@@ -12,6 +12,7 @@ import (
 var upgrader = websocket.Upgrader{EnableCompression: false}
 
 func gsHandler(w http.ResponseWriter, r *http.Request) {
+	defer reportPanic("gsHandler")
 
 	c, err := upgrader.Upgrade(w, r, w.Header())
 	if err != nil {
@@ -22,6 +23,8 @@ func gsHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 func siteHandler(w http.ResponseWriter, r *http.Request) {
+	defer reportPanic("siteHandler")
+
 	fileServer.ServeHTTP(w, r)
 }
 
@@ -34,6 +37,8 @@ var (
 )
 
 func handleConnection(conn *websocket.Conn) {
+	defer reportPanic("handleConnection")
+
 	if conn == nil {
 		return
 	}
@@ -60,6 +65,8 @@ func handleConnection(conn *websocket.Conn) {
 }
 
 func killConnection(conn *websocket.Conn, force bool) {
+	defer reportPanic("killConnection")
+
 	if conn != nil {
 		err := conn.Close()
 		if err == nil || force {
@@ -74,6 +81,8 @@ func killConnection(conn *websocket.Conn, force bool) {
 }
 
 func getNumberConnections() int {
+	defer reportPanic("getNumberConnections")
+
 	numConnectionsLock.Lock()
 	defer numConnectionsLock.Unlock()
 
@@ -81,6 +90,8 @@ func getNumberConnections() int {
 }
 
 func addConnection() {
+	defer reportPanic("addConnection")
+
 	numConnectionsLock.Lock()
 	numConnections++
 	numConnectionsLock.Unlock()

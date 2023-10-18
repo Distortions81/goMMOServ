@@ -1,6 +1,7 @@
 package main
 
 func newParser(input []byte, player *playerData) {
+	defer reportPanic("newParser")
 
 	inputLen := len(input)
 
@@ -31,9 +32,11 @@ func newParser(input []byte, player *playerData) {
 }
 
 func cmd_init(player *playerData, data *[]byte) {
+	defer reportPanic("cmd_init")
 
 }
 
 func cmd_pingpong(player *playerData, data *[]byte) {
+	defer reportPanic("cmd_pingpong")
 
 }

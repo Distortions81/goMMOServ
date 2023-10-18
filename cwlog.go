@@ -24,6 +24,8 @@ var (
  * Write to buffer, async write
  */
 func doLog(withTrace bool, format string, args ...interface{}) {
+	defer reportPanic("doLog")
+
 	var buf string
 
 	if withTrace {
@@ -63,6 +65,8 @@ func doLog(withTrace bool, format string, args ...interface{}) {
 func logDaemon() {
 
 	go func() {
+		defer reportPanic("logDaemon")
+
 		for {
 			logBufLock.Lock()
 
@@ -93,6 +97,8 @@ func logDaemon() {
 
 /* Prep logger */
 func startLog() {
+	defer reportPanic("startLog")
+
 	t := time.Now()
 
 	/* Create our log file names */

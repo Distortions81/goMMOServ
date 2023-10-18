@@ -6,9 +6,18 @@ import (
 	"net/http"
 )
 
-var fileServer http.Handler
+var (
+	fileServer http.Handler
+	wasmMode   = false
+)
+
+const (
+	version   = "0.0.1"
+	buildInfo = "dev"
+)
 
 func main() {
+	defer reportPanic("main")
 
 	devMode := flag.Bool("dev", false, "dev mode enable")
 	bindIP := flag.String("ip", "", "IP to bind to")
