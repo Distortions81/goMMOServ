@@ -2,3 +2,5 @@
 *.key
 log/
 goMMOServ
+panic.log
+heapDump.dat

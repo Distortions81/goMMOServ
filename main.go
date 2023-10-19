@@ -21,6 +21,8 @@ func main() {
 	testSuperChunk := []superChunk{{chunks: testChunks}}
 	testArea = areaData{superChunks: testSuperChunk}
 
+	playerList = make(map[uint32]*playerData)
+
 	//Parse launch params
 	devMode := flag.Bool("dev", false, "dev mode enable")
 	bindIP := flag.String("ip", "", "IP to bind to")
@@ -30,6 +32,8 @@ func main() {
 	//Start logger
 	startLog()
 	logDaemon()
+
+	processGame()
 
 	/* Download server start */
 	fileServer = http.FileServer(http.Dir("www"))

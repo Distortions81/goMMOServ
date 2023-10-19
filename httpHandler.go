@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"net/http"
 	"sync"
 	"time"
@@ -42,7 +43,11 @@ func handleConnection(conn *websocket.Conn) {
 	if conn == nil {
 		return
 	}
-	player := &playerData{conn: conn, lastPing: time.Now()}
+	player := &playerData{conn: conn, lastPing: time.Now(), id: uint32(rand.Int31())}
+	pListLock.Lock()
+	playerList[player.id] = player
+	pListLock.Unlock()
+
 	addConnection()
 	for {
 		_, data, err := conn.ReadMessage()
