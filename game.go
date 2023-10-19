@@ -1,6 +1,10 @@
 package main
 
-import "time"
+import (
+	"bytes"
+	"encoding/binary"
+	"time"
+)
 
 const FrameSpeedMS = 166
 
@@ -9,16 +13,18 @@ func processGame() {
 		for {
 			loopStart := time.Now()
 
-			var output []byte
+			var buf []byte
+			outbuf := bytes.NewBuffer(buf)
+
+			var numPlayers uint32 = uint32(len(playerList))
+			binary.Write(outbuf, binary.BigEndian, &numPlayers)
 			for _, player := range playerList {
-				bufID := uint32ToByteArray(player.id)
-				bufXY := xyToByteArray(player.location.pos)
-				output = append(output, bufID...)
-				output = append(output, bufXY...)
+				binary.Write(outbuf, binary.BigEndian, &player.id)
+				binary.Write(outbuf, binary.BigEndian, &player.location.pos.X)
+				binary.Write(outbuf, binary.BigEndian, &player.location.pos.Y)
 			}
 			for _, player := range playerList {
-				writeToPlayer(player, CMD_UPDATE, output)
-				doLog(true, "meep")
+				writeToPlayer(player, CMD_UPDATE, outbuf.Bytes())
 			}
 
 			took := time.Since(loopStart)

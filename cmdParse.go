@@ -1,6 +1,11 @@
 package main
 
-import "github.com/gorilla/websocket"
+import (
+	"bytes"
+	"encoding/binary"
+
+	"github.com/gorilla/websocket"
+)
 
 func newParser(input []byte, player *playerData) {
 	defer reportPanic("newParser")
@@ -35,12 +40,21 @@ func newParser(input []byte, player *playerData) {
 func cmd_init(player *playerData, data []byte) {
 	defer reportPanic("cmd_init")
 
-	writeToPlayer(player, CMD_LOGIN, uint32ToByteArray(player.id))
+	var buf []byte
+	outbuf := bytes.NewBuffer(buf)
+
+	binary.Write(outbuf, binary.BigEndian, &player.id)
+
+	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 }
 
 func cmd_move(player *playerData, data []byte) {
 
-	byteArrayToXY(&player.location.pos, data)
+	inbuf := bytes.NewBuffer(data)
+
+	binary.Read(inbuf, binary.BigEndian, &player.location.pos.X)
+	binary.Read(inbuf, binary.BigEndian, &player.location.pos.Y)
+
 	doLog(true, "Moved to: %v,%v", player.location.pos.X, player.location.pos.Y)
 }
 
