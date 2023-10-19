@@ -35,7 +35,7 @@ func newParser(input []byte, player *playerData) {
 func cmd_init(player *playerData, data []byte) {
 	defer reportPanic("cmd_init")
 
-	writeToPlayer(player, CMD_LOGIN, nil)
+	writeToPlayer(player, CMD_LOGIN, uint32ToByteArray(player.id))
 }
 
 func cmd_move(player *playerData, data []byte) {
