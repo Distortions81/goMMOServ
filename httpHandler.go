@@ -42,7 +42,8 @@ func handleConnection(conn *websocket.Conn) {
 	if conn == nil {
 		return
 	}
-	player := &playerData{conn: conn, lastPing: time.Now(), id: makePlayerID()}
+	startLock := XY{X: xyHalf, Y: xyHalf}
+	player := &playerData{conn: conn, lastPing: time.Now(), id: makePlayerID(), location: locationData{pos: startLock}}
 	pListLock.Lock()
 	playerList[player.id] = player
 	pListLock.Unlock()
