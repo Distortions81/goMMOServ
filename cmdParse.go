@@ -1,5 +1,7 @@
 package main
 
+import "github.com/gorilla/websocket"
+
 func newParser(input []byte, player *playerData) {
 	defer reportPanic("newParser")
 
@@ -34,9 +36,39 @@ func newParser(input []byte, player *playerData) {
 func cmd_init(player *playerData, data *[]byte) {
 	defer reportPanic("cmd_init")
 
+	writeToPlayer(player, CMD_INIT, nil)
 }
 
 func cmd_pingpong(player *playerData, data *[]byte) {
 	defer reportPanic("cmd_pingpong")
 
+}
+
+func writeToPlayer(player *playerData, header CMD, input []byte) bool {
+
+	if player == nil {
+		return false
+	}
+	if player.conn == nil {
+
+		return false
+	}
+
+	player.lock.Lock()
+	defer player.lock.Unlock()
+
+	var err error
+	if input == nil {
+		err = player.conn.WriteMessage(websocket.BinaryMessage, []byte{byte(header)})
+	} else {
+		err = player.conn.WriteMessage(websocket.BinaryMessage, append([]byte{byte(header)}, input...))
+	}
+	if err != nil {
+		doLog(true, "Error writing response: %v", err)
+		killConnection(player.conn, false)
+		player.conn = nil
+		delete(playerList, player.id)
+		return false
+	}
+	return true
 }
