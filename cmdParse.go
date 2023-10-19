@@ -15,14 +15,12 @@ func newParser(input []byte, player *playerData) {
 	data := input[1:]
 
 	cmdName := cmdNames[d]
-	if cmdName != "" && d != CMD_PINGPONG {
-		doLog(true, "ID: %v, Received: %v", player.id, cmdName)
-	}
+	doLog(true, "ID: %v, Received: %v", player.id, cmdName)
+
 	switch d {
 	case CMD_INIT: /*INIT*/
 		cmd_init(player, &data)
-	case CMD_PINGPONG: /*PING*/
-		cmd_pingpong(player, &data)
+
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		killConnection(player.conn, false)
@@ -36,12 +34,7 @@ func newParser(input []byte, player *playerData) {
 func cmd_init(player *playerData, data *[]byte) {
 	defer reportPanic("cmd_init")
 
-	writeToPlayer(player, CMD_INIT, nil)
-}
-
-func cmd_pingpong(player *playerData, data *[]byte) {
-	defer reportPanic("cmd_pingpong")
-
+	writeToPlayer(player, CMD_LOGIN, nil)
 }
 
 func writeToPlayer(player *playerData, header CMD, input []byte) bool {

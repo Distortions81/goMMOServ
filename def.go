@@ -21,9 +21,7 @@ type CMD uint8
 
 const (
 	CMD_INIT CMD = iota
-	CMD_PINGPONG
-
-	RECV_KEYFRAME
+	CMD_LOGIN
 )
 
 /* Used for debug messages, this could be better */
@@ -32,6 +30,5 @@ var cmdNames map[CMD]string
 func init() {
 	cmdNames = make(map[CMD]string)
 	cmdNames[CMD_INIT] = "CMD_INIT"
-	cmdNames[CMD_PINGPONG] = "CMD_PINGPONG"
-	cmdNames[RECV_KEYFRAME] = "RECV_KEYFRAME"
+	cmdNames[CMD_LOGIN] = "CMD_LOGIN"
 }
