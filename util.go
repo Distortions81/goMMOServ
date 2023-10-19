@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"compress/zlib"
 	"io"
+	"sync"
 )
 
 /* Generic unzip []byte */
@@ -43,4 +44,15 @@ func CompressZip(data []byte) []byte {
 
 func convPos(pos XY) XYs {
 	return XYs{X: int32(pos.X - xyHalf), Y: int32(pos.Y - xyHalf)}
+}
+
+var playerTopID uint32
+var playerIDLock sync.Mutex
+
+func makePlayerID() uint32 {
+	playerIDLock.Lock()
+	defer playerIDLock.Unlock()
+
+	playerTopID++
+	return playerTopID
 }

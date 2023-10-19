@@ -6,7 +6,7 @@ import (
 	"time"
 )
 
-const FrameSpeedMS = 166
+const FrameSpeedNS = 66666666
 
 func processGame() {
 	go func() {
@@ -28,7 +28,7 @@ func processGame() {
 			}
 
 			took := time.Since(loopStart)
-			remaining := (time.Millisecond * FrameSpeedMS) - took
+			remaining := (time.Nanosecond * FrameSpeedNS) - took
 
 			if remaining > 0 { /*Kill remaining time*/
 				time.Sleep(remaining)
