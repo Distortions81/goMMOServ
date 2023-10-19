@@ -4,43 +4,8 @@ import (
 	"bytes"
 	"compress/zlib"
 	"encoding/binary"
-	"fmt"
 	"io"
-	"os"
-	"path/filepath"
-	"runtime"
-	"runtime/debug"
 )
-
-const (
-	hdFileName = "heapDump.dat"
-	pLogName   = "panic.log"
-)
-
-func reportPanic(format string, args ...interface{}) {
-	if r := recover(); r != nil {
-
-		doLog(false, "Writing '%v' file.", hdFileName)
-		f, err := os.Create(hdFileName)
-		if err == nil {
-			debug.WriteHeapDump(f.Fd())
-			f.Close()
-			doLog(true, "wrote heapDump")
-		} else {
-			doLog(false, "Failed to write '%v' file.", hdFileName)
-		}
-
-		_, filename, line, _ := runtime.Caller(4)
-		input := fmt.Sprintf(format, args...)
-		buf := fmt.Sprintf(
-			"(GAME CRASH)\nBUILD:v%v-%v\nLabel:%v File: %v Line: %v\nError:%v\n\nStack Trace:\n%v\n",
-			version, buildInfo, input, filepath.Base(filename), line, r, string(debug.Stack()))
-
-		os.WriteFile(pLogName, []byte(buf), 0660)
-		doLog(true, "wrote %v", pLogName)
-
-	}
-}
 
 /* Generic unzip []byte */
 func UncompressZip(data []byte) []byte {
@@ -145,12 +110,11 @@ func byteArrayToUint64(i []byte) uint64 {
 }
 
 func xyToByteArray(pos XY) []byte {
-	byteArray := make([]byte, 8)
-	binary.LittleEndian.PutUint32(byteArray, pos.X)
-	binary.LittleEndian.PutUint32(byteArray, pos.Y)
+	byteArray := make([]byte, 16)
+	binary.LittleEndian.PutUint32(byteArray[0:7], pos.X)
+	binary.LittleEndian.PutUint32(byteArray[8:16], pos.Y)
 	return byteArray
 }
-
 func byteArrayToXY(pos *XY, i []byte) bool {
 
 	if len(i) < 16 {
@@ -161,4 +125,8 @@ func byteArrayToXY(pos *XY, i []byte) bool {
 	pos.X = binary.LittleEndian.Uint32(i[0:7])
 	pos.Y = binary.LittleEndian.Uint32(i[8:16])
 	return false
+}
+
+func convPos(pos XY) XYs {
+	return XYs{X: int32(pos.X - xyHalf), Y: int32(pos.Y - xyHalf)}
 }

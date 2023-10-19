@@ -36,3 +36,7 @@ func init() {
 	cmdNames[CMD_PLAY] = "CMD_PLAY"
 	cmdNames[CMD_MOVE] = "CMD_MOVE"
 }
+
+const xyHalf = 2147483648
+
+var xyCenter XY = XY{X: xyHalf, Y: xyHalf}

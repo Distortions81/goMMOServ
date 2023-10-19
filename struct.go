@@ -7,10 +7,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const xyHalf = 2147483648
-
-var xyCenter XY = XY{X: xyHalf, Y: xyHalf}
-
 type playerData struct {
 	conn *websocket.Conn
 	id   uint32
@@ -37,6 +33,11 @@ type locationData struct {
 type XY struct {
 	X uint32
 	Y uint32
+}
+
+type XYs struct {
+	X int32
+	Y int32
 }
 
 type areaData struct {

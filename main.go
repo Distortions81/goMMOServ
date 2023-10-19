@@ -12,11 +12,6 @@ var (
 	testArea   areaData
 )
 
-const (
-	version   = "0.0.1"
-	buildInfo = "dev"
-)
-
 func main() {
 	defer reportPanic("main")
 	defer time.Sleep(time.Second)
