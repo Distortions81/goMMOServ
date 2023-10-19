@@ -19,8 +19,9 @@ func newParser(input []byte, player *playerData) {
 
 	switch d {
 	case CMD_INIT: /*INIT*/
-		cmd_init(player, &data)
-
+		cmd_init(player, data)
+	case CMD_MOVE: /*MOVE*/
+		cmd_move(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		killConnection(player.conn, false)
@@ -31,10 +32,16 @@ func newParser(input []byte, player *playerData) {
 	}
 }
 
-func cmd_init(player *playerData, data *[]byte) {
+func cmd_init(player *playerData, data []byte) {
 	defer reportPanic("cmd_init")
 
 	writeToPlayer(player, CMD_LOGIN, nil)
+}
+
+func cmd_move(player *playerData, data []byte) {
+
+	byteArrayToXY(&player.location.pos, data)
+	doLog(true, "Moved to: %v,%v", player.location.pos.X, player.location.pos.Y)
 }
 
 func writeToPlayer(player *playerData, header CMD, input []byte) bool {

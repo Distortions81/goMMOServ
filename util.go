@@ -143,3 +143,22 @@ func byteArrayToUint64(i []byte) uint64 {
 	}
 	return binary.LittleEndian.Uint64(i)
 }
+
+func xyToByteArray(pos XY) []byte {
+	byteArray := make([]byte, 8)
+	binary.LittleEndian.PutUint32(byteArray, pos.X)
+	binary.LittleEndian.PutUint32(byteArray, pos.Y)
+	return byteArray
+}
+
+func byteArrayToXY(pos *XY, i []byte) bool {
+
+	if len(i) < 16 {
+		doLog(true, "byteArrayToXY: data invalid")
+		return true
+	}
+
+	pos.X = binary.LittleEndian.Uint32(i[0:7])
+	pos.Y = binary.LittleEndian.Uint32(i[8:16])
+	return false
+}
