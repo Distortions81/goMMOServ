@@ -9,6 +9,7 @@ import (
 
 var (
 	fileServer http.Handler
+	testArea   areaData
 )
 
 const (
@@ -19,6 +20,11 @@ const (
 func main() {
 	defer reportPanic("main")
 	defer time.Sleep(time.Second)
+
+	/* make test area */
+	testChunks := []chunkData{}
+	testSuperChunk := []superChunk{{chunks: testChunks}}
+	testArea = areaData{superChunks: testSuperChunk}
 
 	//Parse launch params
 	devMode := flag.Bool("dev", false, "dev mode enable")
