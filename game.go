@@ -9,12 +9,15 @@ func processGame() {
 		for {
 			loopStart := time.Now()
 
-			var buffer []byte
+			var output []byte
 			for _, player := range playerList {
-				buffer = append(buffer, xyToByteArray(player.location.pos)...)
+				bufID := uint32ToByteArray(player.id)
+				bufXY := xyToByteArray(player.location.pos)
+				output = append(output, bufID...)
+				output = append(output, bufXY...)
 			}
 			for _, player := range playerList {
-				writeToPlayer(player, CMD_UPDATE, buffer)
+				writeToPlayer(player, CMD_UPDATE, output)
 				doLog(true, "meep")
 			}
 
