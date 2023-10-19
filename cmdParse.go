@@ -55,7 +55,7 @@ func cmd_move(player *playerData, data []byte) {
 	binary.Read(inbuf, binary.BigEndian, &player.location.pos.X)
 	binary.Read(inbuf, binary.BigEndian, &player.location.pos.Y)
 
-	doLog(true, "Moved to: %v,%v", player.location.pos.X, player.location.pos.Y)
+	//doLog(true, "Moved to: %v,%v", player.location.pos.X, player.location.pos.Y)
 }
 
 func writeToPlayer(player *playerData, header CMD, input []byte) bool {
