@@ -27,12 +27,17 @@ func newParser(input []byte, player *playerData) {
 		cmd_init(player, data)
 	case CMD_MOVE: /*MOVE*/
 		cmd_move(player, data)
+	case CMD_CHAT: /*CHAT*/
+		cmd_chat(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		killConnection(player.conn, false)
 
 		player.conn = nil
+		pListLock.Lock()
 		delete(playerList, player.id)
+		pListLock.Unlock()
+
 		return
 	}
 }
@@ -46,6 +51,15 @@ func cmd_init(player *playerData, data []byte) {
 	binary.Write(outbuf, binary.BigEndian, &player.id)
 
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
+}
+
+func cmd_chat(player *playerData, data []byte) {
+	pListLock.Lock()
+	defer pListLock.Unlock()
+
+	for _, player := range playerList {
+		writeToPlayer(player, CMD_CHAT, data)
+	}
 }
 
 func cmd_move(player *playerData, data []byte) {
@@ -81,7 +95,9 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 		doLog(true, "Error writing response: %v", err)
 		killConnection(player.conn, false)
 		player.conn = nil
+
 		delete(playerList, player.id)
+
 		return false
 	}
 	return true

@@ -16,8 +16,10 @@ func processGame() {
 			var buf []byte
 			outbuf := bytes.NewBuffer(buf)
 
+			pListLock.Lock()
 			var numPlayers uint32 = uint32(len(playerList))
 			binary.Write(outbuf, binary.BigEndian, &numPlayers)
+
 			for _, player := range playerList {
 				binary.Write(outbuf, binary.BigEndian, &player.id)
 				binary.Write(outbuf, binary.BigEndian, &player.location.pos.X)
@@ -26,6 +28,7 @@ func processGame() {
 			for _, player := range playerList {
 				writeToPlayer(player, CMD_UPDATE, outbuf.Bytes())
 			}
+			pListLock.Unlock()
 
 			took := time.Since(loopStart)
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
@@ -37,6 +40,7 @@ func processGame() {
 				time.Sleep(time.Millisecond)
 				doLog(true, "Unable to keep up: took: %v", took)
 			}
+
 		}
 	}()
 }
