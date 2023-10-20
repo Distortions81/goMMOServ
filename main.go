@@ -47,15 +47,13 @@ func main() {
 	http.HandleFunc("/", siteHandler) //wasm download site
 
 	//If not in development mode, setup an origin check
-	if !*devMode {
-		upgrader.CheckOrigin = func(r *http.Request) bool {
-			origin := r.Header.Get("Origin")
-			if !*devMode && origin != "https://gommo.go-game.net" {
-				doLog(true, "Connection failed origin check: %v", r.RemoteAddr)
-				return false
-			}
-			return true
+	upgrader.CheckOrigin = func(r *http.Request) bool {
+		origin := r.Header.Get("Origin")
+		if !*devMode && origin != "https://gommo.go-game.net" {
+			doLog(true, "Connection failed origin check: %v", r.RemoteAddr)
+			return false
 		}
+		return true
 	}
 
 	/* Start server*/
