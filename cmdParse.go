@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 
 	"github.com/gorilla/websocket"
 )
@@ -66,8 +67,29 @@ func cmd_move(player *playerData, data []byte) {
 
 	inbuf := bytes.NewBuffer(data)
 
-	binary.Read(inbuf, binary.BigEndian, &player.location.pos.X)
-	binary.Read(inbuf, binary.BigEndian, &player.location.pos.Y)
+	newPos := XY{}
+	binary.Read(inbuf, binary.BigEndian, &newPos)
+	binary.Read(inbuf, binary.BigEndian, &newPos)
+
+	player.lock.Lock()
+	defer player.lock.Unlock()
+
+	for t, target := range playerList {
+		if t == player.id {
+			continue
+		}
+		dist := distance(target.location.pos, newPos)
+		if dist < 1 {
+			fmt.Printf("Items inside each other! %v and %v\n", target.id, player.id)
+			player.location.pos.X += uint32(dist) * 2
+			player.location.pos.Y += uint32(dist) * 2
+		} else if dist < 24 {
+			fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
+			return
+		}
+	}
+
+	player.location.pos = newPos
 
 	//doLog(true, "Moved to: %v,%v", player.location.pos.X, player.location.pos.Y)
 }

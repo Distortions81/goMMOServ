@@ -4,8 +4,16 @@ import (
 	"bytes"
 	"compress/zlib"
 	"io"
+	"math"
 	"sync"
 )
+
+func distance(a, b XY) float64 {
+	dx := a.X - b.X
+	dy := a.Y - b.Y
+
+	return math.Sqrt(float64(dx*dx + dy*dy))
+}
 
 /* Generic unzip []byte */
 func UncompressZip(data []byte) []byte {
