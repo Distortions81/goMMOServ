@@ -1,7 +1,6 @@
 package main
 
 import (
-	"sync"
 	"time"
 
 	"github.com/gorilla/websocket"
@@ -17,7 +16,6 @@ type playerData struct {
 	inventory []objectData
 
 	lastPing time.Time
-	lock     sync.Mutex
 }
 
 type locationData struct {

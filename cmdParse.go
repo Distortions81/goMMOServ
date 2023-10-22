@@ -91,9 +91,6 @@ func cmd_move(player *playerData, data []byte) {
 	binary.Read(inbuf, binary.LittleEndian, &newPosX)
 	binary.Read(inbuf, binary.LittleEndian, &newPosY)
 
-	player.lock.Lock()
-	defer player.lock.Unlock()
-
 	var newPos XY = XY{X: uint32(int(player.location.pos.X) + int(newPosX)), Y: uint32(int(player.location.pos.Y) + int(newPosY))}
 
 	for t, target := range playerList {
@@ -102,6 +99,7 @@ func cmd_move(player *playerData, data []byte) {
 			continue
 		}
 		dist := distance(target.location.pos, newPos)
+
 		if dist < 10 {
 			fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
 			newPos.X += 24
@@ -112,6 +110,7 @@ func cmd_move(player *playerData, data []byte) {
 			fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
 			return
 		}
+
 	}
 
 	player.location.pos = newPos
@@ -128,9 +127,6 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 
 		return false
 	}
-
-	player.lock.Lock()
-	defer player.lock.Unlock()
 
 	var err error
 	if input == nil {
