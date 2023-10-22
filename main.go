@@ -10,7 +10,6 @@ import (
 var (
 	fileServer http.Handler
 	testArea   areaData
-	gDevMode   bool
 	gTestMode  bool
 )
 
@@ -32,7 +31,6 @@ func main() {
 	testMode := flag.Bool("test", false, "load many test characters")
 	flag.Parse()
 
-	gDevMode = *devMode
 	gTestMode = *testMode
 
 	//Start logger
