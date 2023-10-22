@@ -10,6 +10,8 @@ import (
 var (
 	fileServer http.Handler
 	testArea   areaData
+	gDevMode   bool
+	gTestMode  bool
 )
 
 func main() {
@@ -27,7 +29,11 @@ func main() {
 	devMode := flag.Bool("dev", false, "dev mode enable")
 	bindIP := flag.String("ip", "", "IP to bind to")
 	bindPort := flag.Int("port", 443, "port to bind to for HTTPS")
+	testMode := flag.Bool("test", false, "load many test characters")
 	flag.Parse()
+
+	gDevMode = *devMode
+	gTestMode = *testMode
 
 	//Start logger
 	startLog()

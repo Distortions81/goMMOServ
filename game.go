@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"encoding/binary"
+	"fmt"
 	"math/rand"
 	"time"
 )
@@ -44,25 +45,26 @@ func processGame() {
 
 			if remaining > 0 { /*Kill remaining time*/
 				time.Sleep(remaining)
-				/*
+				if gDevMode {
 					if gameTick%75 == 0 {
-						fmt.Printf("took: %v: out: %v mbit (%vkb)\n", took, outspeed, updateSize)
+						fmt.Printf("took: %v: out: %v mbit (%vkb,%vkbit/sec)\n", took, outspeed, updateSize, updateSize*15*8)
 					}
-				*/
+				}
 
 			} else { /*We are lagging behind realtime*/
-				doLog(true, "Unable to keep up: took: %v, out: %v mbit (%vkb", took, outspeed, updateSize)
+				doLog(true, "Unable to keep up: took: %v, out: %v mbit (%vkb,%vkbit/sec)", took, outspeed, updateSize, updateSize*15*8)
 			}
 
 		}
 	}()
 
-	return
-	for i := 0; i < 100; i++ {
-		startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(1280)), Y: uint32(int(xyHalf) + rand.Intn(1280))}
-		player := &playerData{lastPing: time.Now(), id: makePlayerID(), location: locationData{pos: startLoc}}
-		pListLock.Lock()
-		playerList[player.id] = player
-		pListLock.Unlock()
+	if gTestMode {
+		for i := 0; i < 500; i++ {
+			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(1280)), Y: uint32(int(xyHalf) + rand.Intn(1280))}
+			player := &playerData{lastPing: time.Now(), id: makePlayerID(), location: locationData{pos: startLoc}}
+			pListLock.Lock()
+			playerList[player.id] = player
+			pListLock.Unlock()
+		}
 	}
 }
