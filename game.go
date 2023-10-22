@@ -55,6 +55,7 @@ func processGame() {
 		}
 	}()
 
+	return
 	for i := 0; i < 1000; i++ {
 		startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(1280)), Y: uint32(int(xyHalf) + rand.Intn(1280))}
 		player := &playerData{lastPing: time.Now(), id: makePlayerID(), location: locationData{pos: startLoc}}
