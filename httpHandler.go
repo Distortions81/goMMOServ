@@ -34,6 +34,8 @@ var (
 
 	playerList map[uint32]*playerData
 	pListLock  sync.RWMutex
+
+	maxNetRead = 8192
 )
 
 func handleConnection(conn *websocket.Conn) {
@@ -47,6 +49,8 @@ func handleConnection(conn *websocket.Conn) {
 	pListLock.Lock()
 	playerList[player.id] = player
 	pListLock.Unlock()
+
+	conn.SetReadLimit(int64(maxNetRead))
 
 	addConnection()
 	for {
