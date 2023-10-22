@@ -37,7 +37,7 @@ var (
 	pListLock  sync.Mutex
 	gameLock   sync.Mutex
 
-	maxNetRead     = 1024000
+	maxNetRead     = 1024 * 100
 	maxConnections = 1000
 )
 
