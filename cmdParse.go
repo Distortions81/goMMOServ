@@ -98,6 +98,7 @@ func cmd_move(player *playerData, data []byte) {
 
 	for t, target := range playerList {
 		if t == player.id {
+			//Skip self
 			continue
 		}
 		dist := distance(target.location.pos, newPos)

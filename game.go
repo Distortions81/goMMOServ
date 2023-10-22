@@ -21,9 +21,11 @@ func processGame() {
 			binary.Write(outbuf, binary.LittleEndian, &numPlayers)
 
 			for _, player := range playerList {
+				player.lock.Lock()
 				binary.Write(outbuf, binary.LittleEndian, &player.id)
 				binary.Write(outbuf, binary.LittleEndian, &player.location.pos.X)
 				binary.Write(outbuf, binary.LittleEndian, &player.location.pos.Y)
+				player.lock.Unlock()
 			}
 			for _, player := range playerList {
 				writeToPlayer(player, CMD_UPDATE, outbuf.Bytes())

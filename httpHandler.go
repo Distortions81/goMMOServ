@@ -33,7 +33,8 @@ var (
 	numConnectionsLock sync.Mutex
 
 	playerList map[uint32]*playerData
-	pListLock  sync.RWMutex
+	pListLock  sync.Mutex
+	gameLock   sync.Mutex
 
 	maxNetRead     = 8192
 	maxConnections = 1000
