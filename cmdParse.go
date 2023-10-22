@@ -54,12 +54,21 @@ func cmd_init(player *playerData, data []byte) {
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 }
 
+const maxChat = 256
+
 func cmd_chat(player *playerData, data []byte) {
+
+	if len(data) > maxChat {
+		return
+	}
+
 	pListLock.Lock()
 	defer pListLock.Unlock()
 
-	for _, player := range playerList {
-		writeToPlayer(player, CMD_CHAT, data)
+	pName := fmt.Sprintf("Player-%v says: %v", player.id, string(data))
+
+	for _, target := range playerList {
+		writeToPlayer(target, CMD_CHAT, []byte(pName))
 	}
 }
 
