@@ -61,6 +61,8 @@ func cmd_init(player *playerData, data []byte) {
 	binary.Write(outbuf, binary.LittleEndian, &player.id)
 
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
+
+	cmd_move(player, []byte{})
 }
 
 const maxChat = 256
@@ -99,10 +101,10 @@ func cmd_move(player *playerData, data []byte) {
 			continue
 		}
 		dist := distance(target.location.pos, newPos)
-		if dist < 1 {
-			fmt.Printf("Items inside each other! %v and %v\n", target.id, player.id)
-			player.location.pos.X += uint32(dist)
-			player.location.pos.Y += uint32(dist)
+		if dist < 10 {
+			fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
+			newPos.X += 24
+			newPos.Y += 24
 		} else if dist < 24 {
 			fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
 			return
