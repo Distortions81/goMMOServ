@@ -73,8 +73,8 @@ func cmd_chat(player *playerData, data []byte) {
 		return
 	}
 
-	pListLock.Lock()
-	defer pListLock.Unlock()
+	pListLock.RLock()
+	defer pListLock.RLock()
 
 	pName := fmt.Sprintf("Player-%v says: %v", player.id, string(data))
 

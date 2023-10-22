@@ -23,7 +23,7 @@ func processGame() {
 
 			outbuf.Reset()
 
-			pListLock.Lock()
+			pListLock.RLock()
 			var numPlayers uint32 = uint32(len(playerList))
 			binary.Write(outbuf, binary.LittleEndian, &numPlayers)
 
@@ -35,7 +35,7 @@ func processGame() {
 			for _, player := range playerList {
 				writeToPlayer(player, CMD_UPDATE, outbuf.Bytes())
 			}
-			pListLock.Unlock()
+			pListLock.RUnlock()
 
 			took := time.Since(loopStart)
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
@@ -45,7 +45,8 @@ func processGame() {
 
 			if remaining > 0 { /*Kill remaining time*/
 				time.Sleep(remaining)
-				if gDevMode {
+
+				if gTestMode {
 					if gameTick%75 == 0 {
 						fmt.Printf("took: %v: out: %v mbit (%vkb,%vkbit/sec)\n", took, outspeed, updateSize, updateSize*15*8)
 					}
