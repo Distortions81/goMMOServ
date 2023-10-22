@@ -2,6 +2,7 @@ package main
 
 import (
 	"log"
+	"math/rand"
 	"net/http"
 	"sync"
 	"time"
@@ -36,7 +37,7 @@ var (
 	pListLock  sync.Mutex
 	gameLock   sync.Mutex
 
-	maxNetRead     = 8192
+	maxNetRead     = 1024000
 	maxConnections = 1000
 )
 
@@ -51,8 +52,8 @@ func handleConnection(conn *websocket.Conn) {
 		return
 	}
 
-	startLock := XY{X: xyHalf, Y: xyHalf}
-	player := &playerData{conn: conn, lastPing: time.Now(), id: makePlayerID(), location: locationData{pos: startLock}}
+	startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(128)), Y: uint32(int(xyHalf) + rand.Intn(128))}
+	player := &playerData{conn: conn, lastPing: time.Now(), id: makePlayerID(), location: locationData{pos: startLoc}}
 	pListLock.Lock()
 	playerList[player.id] = player
 	pListLock.Unlock()

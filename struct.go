@@ -21,7 +21,8 @@ type playerData struct {
 }
 
 type locationData struct {
-	pos XY
+	pos      XY
+	velocity XY
 
 	areaid uint32
 

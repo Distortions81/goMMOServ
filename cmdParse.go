@@ -20,8 +20,8 @@ func newParser(input []byte, player *playerData) {
 	d := CMD(input[0])
 	data := input[1:]
 
-	cmdName := cmdNames[d]
-	doLog(true, "ID: %v, Received: %v", player.id, cmdName)
+	//cmdName := cmdNames[d]
+	//doLog(true, "ID: %v, Received: %v", player.id, cmdName)
 
 	switch d {
 	case CMD_INIT: /*INIT*/
@@ -106,6 +106,8 @@ func cmd_move(player *playerData, data []byte) {
 			fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
 			newPos.X += 24
 			newPos.Y += 24
+			player.location.pos = newPos
+			return
 		} else if dist < 24 {
 			fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
 			return
@@ -114,7 +116,7 @@ func cmd_move(player *playerData, data []byte) {
 
 	player.location.pos = newPos
 
-	doLog(true, "Move: %v,%v", newPosX, newPosY)
+	//doLog(true, "Move: %v,%v", newPosX, newPosY)
 }
 
 func writeToPlayer(player *playerData, header CMD, input []byte) bool {
