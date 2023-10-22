@@ -35,7 +35,8 @@ var (
 	playerList map[uint32]*playerData
 	pListLock  sync.RWMutex
 
-	maxNetRead = 8192
+	maxNetRead     = 8192
+	maxConnections = 1000
 )
 
 func handleConnection(conn *websocket.Conn) {
@@ -44,6 +45,11 @@ func handleConnection(conn *websocket.Conn) {
 	if conn == nil {
 		return
 	}
+
+	if getNumberConnections() > maxConnections {
+		return
+	}
+
 	startLock := XY{X: xyHalf, Y: xyHalf}
 	player := &playerData{conn: conn, lastPing: time.Now(), id: makePlayerID(), location: locationData{pos: startLock}}
 	pListLock.Lock()
