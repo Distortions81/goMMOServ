@@ -1,7 +1,7 @@
 package main
 
 import (
-	"time"
+	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -9,24 +9,9 @@ import (
 type playerData struct {
 	conn *websocket.Conn
 	id   uint32
+	pos  XY
 
-	name     string
-	location locationData
-
-	inventory []objectData
-
-	lastPing time.Time
-}
-
-type locationData struct {
-	pos      XY
-	velocity XY
-
-	areaid uint32
-
-	areaP       *areaData
-	superChunkP *superChunk
-	chunkP      *chunkData
+	lock sync.Mutex
 }
 
 type XY struct {

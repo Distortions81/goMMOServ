@@ -30,6 +30,8 @@ func newParser(input []byte, player *playerData) {
 		cmd_move(player, data)
 	case CMD_CHAT: /*CHAT*/
 		cmd_chat(player, data)
+	case CMD_SCREENSIZE: /* Vision */
+		cmd_screensize(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		killConnection(player.conn, false)
@@ -41,6 +43,9 @@ func newParser(input []byte, player *playerData) {
 
 		return
 	}
+}
+
+func cmd_screensize(player *playerData, data []byte) {
 }
 
 func cmd_init(player *playerData, data []byte) {
@@ -91,20 +96,20 @@ func cmd_move(player *playerData, data []byte) {
 	binary.Read(inbuf, binary.LittleEndian, &newPosX)
 	binary.Read(inbuf, binary.LittleEndian, &newPosY)
 
-	var newPos XY = XY{X: uint32(int(player.location.pos.X) + int(newPosX)), Y: uint32(int(player.location.pos.Y) + int(newPosY))}
+	var newPos XY = XY{X: uint32(int(player.pos.X) + int(newPosX)), Y: uint32(int(player.pos.Y) + int(newPosY))}
 
 	for t, target := range playerList {
 		if t == player.id {
 			//Skip self
 			continue
 		}
-		dist := distance(target.location.pos, newPos)
+		dist := distance(target.pos, newPos)
 
 		if dist < 10 {
 			fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
 			newPos.X += 24
 			newPos.Y += 24
-			player.location.pos = newPos
+			player.pos = newPos
 			return
 		} else if dist < 24 {
 			fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
@@ -113,7 +118,7 @@ func cmd_move(player *playerData, data []byte) {
 
 	}
 
-	player.location.pos = newPos
+	player.pos = newPos
 
 	//doLog(true, "Move: %v,%v", newPosX, newPosY)
 }

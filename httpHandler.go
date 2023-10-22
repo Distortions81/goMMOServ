@@ -5,7 +5,6 @@ import (
 	"math/rand"
 	"net/http"
 	"sync"
-	"time"
 
 	"github.com/gorilla/websocket"
 )
@@ -52,7 +51,7 @@ func handleConnection(conn *websocket.Conn) {
 	}
 
 	startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(128)), Y: uint32(int(xyHalf) + rand.Intn(128))}
-	player := &playerData{conn: conn, lastPing: time.Now(), id: makePlayerID(), location: locationData{pos: startLoc}}
+	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc}
 	pListLock.Lock()
 	playerList[player.id] = player
 	pListLock.Unlock()

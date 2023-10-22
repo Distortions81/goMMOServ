@@ -9,6 +9,7 @@ import (
 )
 
 const FrameSpeedNS = 66666666
+const cropSize = 512 + 24
 
 func processGame() {
 	var gameTick uint64
@@ -21,18 +22,31 @@ func processGame() {
 			gameTick++
 			loopStart := time.Now()
 
-			outbuf.Reset()
-
 			pListLock.RLock()
-			var numPlayers uint32 = uint32(len(playerList))
-			binary.Write(outbuf, binary.LittleEndian, &numPlayers)
 
 			for _, player := range playerList {
-				binary.Write(outbuf, binary.LittleEndian, &player.id)
-				binary.Write(outbuf, binary.LittleEndian, &player.location.pos.X)
-				binary.Write(outbuf, binary.LittleEndian, &player.location.pos.Y)
-			}
-			for _, player := range playerList {
+				if player.conn == nil {
+					continue
+				}
+				outbuf.Reset()
+				var numPlayers uint32 = 0
+				var tmpList []*playerData
+				for _, target := range playerList {
+					xdiff := int(player.pos.X) - int(target.pos.X)
+					ydiff := int(player.pos.Y) - int(target.pos.Y)
+					if xdiff > cropSize || ydiff > cropSize ||
+						xdiff < -cropSize || ydiff < -cropSize {
+						continue
+					}
+					tmpList = append(tmpList, target)
+					numPlayers++
+				}
+				binary.Write(outbuf, binary.LittleEndian, &numPlayers)
+				for _, target := range tmpList {
+					binary.Write(outbuf, binary.LittleEndian, &target.id)
+					binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
+					binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
+				}
 				writeToPlayer(player, CMD_UPDATE, outbuf.Bytes())
 			}
 			pListLock.RUnlock()
@@ -40,29 +54,26 @@ func processGame() {
 			took := time.Since(loopStart)
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
 
-			outspeed := (outbuf.Len() * int(numPlayers)) * 15.0 / 1024 / 1024 * 8
-			updateSize := outbuf.Len() / 1024
-
 			if remaining > 0 { /*Kill remaining time*/
 				time.Sleep(remaining)
 
 				if gTestMode {
 					if gameTick%75 == 0 {
-						fmt.Printf("took: %v: out: %v mbit (%vkb,%vkbit/sec)\n", took, outspeed, updateSize, updateSize*15*8)
+						fmt.Printf("took: %v\n", took)
 					}
 				}
 
 			} else { /*We are lagging behind realtime*/
-				doLog(true, "Unable to keep up: took: %v, out: %v mbit (%vkb,%vkbit/sec)", took, outspeed, updateSize, updateSize*15*8)
+				doLog(true, "Unable to keep up: took: %v\n", took)
 			}
 
 		}
 	}()
 
 	if gTestMode {
-		for i := 0; i < 500; i++ {
-			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(1280)), Y: uint32(int(xyHalf) + rand.Intn(1280))}
-			player := &playerData{lastPing: time.Now(), id: makePlayerID(), location: locationData{pos: startLoc}}
+		for i := 0; i < 5000; i++ {
+			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(10240)), Y: uint32(int(xyHalf) + rand.Intn(10240))}
+			player := &playerData{id: makePlayerID(), pos: startLoc}
 			pListLock.Lock()
 			playerList[player.id] = player
 			pListLock.Unlock()
