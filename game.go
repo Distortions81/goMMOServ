@@ -18,12 +18,12 @@ func processGame() {
 
 			pListLock.Lock()
 			var numPlayers uint32 = uint32(len(playerList))
-			binary.Write(outbuf, binary.BigEndian, &numPlayers)
+			binary.Write(outbuf, binary.LittleEndian, &numPlayers)
 
 			for _, player := range playerList {
-				binary.Write(outbuf, binary.BigEndian, &player.id)
-				binary.Write(outbuf, binary.BigEndian, &player.location.pos.X)
-				binary.Write(outbuf, binary.BigEndian, &player.location.pos.Y)
+				binary.Write(outbuf, binary.LittleEndian, &player.id)
+				binary.Write(outbuf, binary.LittleEndian, &player.location.pos.X)
+				binary.Write(outbuf, binary.LittleEndian, &player.location.pos.Y)
 			}
 			for _, player := range playerList {
 				writeToPlayer(player, CMD_UPDATE, outbuf.Bytes())

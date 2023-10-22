@@ -46,10 +46,19 @@ func newParser(input []byte, player *playerData) {
 func cmd_init(player *playerData, data []byte) {
 	defer reportPanic("cmd_init")
 
+	inbuf := bytes.NewBuffer(data)
+	var version uint16
+	binary.Read(inbuf, binary.LittleEndian, &version)
+	if version != protoVersion {
+		doLog(true, "Invalid proto version: %v", version)
+		writeToPlayer(player, CMD_INIT, []byte{})
+		return
+	}
+
 	var buf []byte
 	outbuf := bytes.NewBuffer(buf)
 
-	binary.Write(outbuf, binary.BigEndian, &player.id)
+	binary.Write(outbuf, binary.LittleEndian, &player.id)
 
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 }
@@ -76,12 +85,14 @@ func cmd_move(player *playerData, data []byte) {
 
 	inbuf := bytes.NewBuffer(data)
 
-	newPos := XY{}
-	binary.Read(inbuf, binary.BigEndian, &newPos)
-	binary.Read(inbuf, binary.BigEndian, &newPos)
+	var newPosX, newPosY int8
+	binary.Read(inbuf, binary.LittleEndian, &newPosX)
+	binary.Read(inbuf, binary.LittleEndian, &newPosY)
 
 	player.lock.Lock()
 	defer player.lock.Unlock()
+
+	var newPos XY = XY{X: uint32(int(player.location.pos.X) + int(newPosX)), Y: uint32(int(player.location.pos.Y) + int(newPosY))}
 
 	for t, target := range playerList {
 		if t == player.id {
@@ -90,8 +101,8 @@ func cmd_move(player *playerData, data []byte) {
 		dist := distance(target.location.pos, newPos)
 		if dist < 1 {
 			fmt.Printf("Items inside each other! %v and %v\n", target.id, player.id)
-			player.location.pos.X += uint32(dist) * 2
-			player.location.pos.Y += uint32(dist) * 2
+			player.location.pos.X += uint32(dist)
+			player.location.pos.Y += uint32(dist)
 		} else if dist < 24 {
 			fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
 			return
@@ -100,7 +111,7 @@ func cmd_move(player *playerData, data []byte) {
 
 	player.location.pos = newPos
 
-	//doLog(true, "Moved to: %v,%v", player.location.pos.X, player.location.pos.Y)
+	doLog(true, "Move: %v,%v", newPosX, newPosY)
 }
 
 func writeToPlayer(player *playerData, header CMD, input []byte) bool {
