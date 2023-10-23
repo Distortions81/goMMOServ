@@ -44,18 +44,16 @@ func processGame() {
 							}
 
 							for _, target := range chunk.players {
-								numPlayers += uint32(len(chunk.players))
 								binary.Write(outbuf, binary.LittleEndian, &target.id)
 								binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
 								binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
 							}
+							numPlayers += uint32(len(chunk.players))
 						}
 					}
 
 					binary.Write(countbuf, binary.LittleEndian, &numPlayers)
 					writeToPlayer(player, CMD_UPDATE, append(countbuf.Bytes(), outbuf.Bytes()...))
-					//buf := fmt.Sprintf("b/sec: %v", len(outbuf.Bytes())*15)
-					//fmt.Println(buf)
 					wg.Done()
 				}(player)
 
@@ -72,12 +70,12 @@ func processGame() {
 
 				if gTestMode {
 					if gameTick%75 == 0 {
-						fmt.Printf("took: %v\n", took)
+						fmt.Printf("took: %v\n", took.Round(time.Millisecond))
 					}
 				}
 
 			} else { /*We are lagging behind realtime*/
-				doLog(true, "Unable to keep up: took: %v", took)
+				doLog(true, "Unable to keep up: took: %v", took.Round(time.Millisecond))
 			}
 
 		}
