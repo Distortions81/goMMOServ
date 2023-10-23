@@ -25,11 +25,7 @@ func processGame() {
 
 			for _, player := range playerList {
 
-				if player.bot {
-					//continue
-				}
-
-				const numChunks = 18
+				const numChunks = 6
 				var numPlayers uint32
 				for x := -numChunks; x < numChunks; x++ {
 					for y := -numChunks; y < numChunks; y++ {
@@ -87,7 +83,7 @@ func processGame() {
 	}()
 
 	if gTestMode {
-		for i := 0; i < 500; i++ {
+		for i := 0; i < 1000; i++ {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(5000)),
 				Y: uint32(int(xyHalf) + rand.Intn(5000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, bot: true}
@@ -99,7 +95,7 @@ func processGame() {
 	}
 }
 
-const chunkDiv = 32
+const chunkDiv = 128
 
 func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 	if area == nil {
