@@ -14,8 +14,9 @@ func processGame() {
 	var gameTick uint64
 	go func() {
 
-		var buf []byte
+		var buf, cbuf []byte
 		outbuf := bytes.NewBuffer(buf)
+		countbuf := bytes.NewBuffer(cbuf)
 
 		for {
 			gameTick++
@@ -27,20 +28,9 @@ func processGame() {
 
 				const numChunks = 6
 				var numPlayers uint32
-				for x := -numChunks; x < numChunks; x++ {
-					for y := -numChunks; y < numChunks; y++ {
-						chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
-							Y: uint32(int(player.pos.Y/chunkDiv) + y)}
-						chunk := player.area.chunks[chunkPos]
-						if chunk == nil {
-							continue
-						}
-						numPlayers += uint32(len(chunk.players))
-					}
-				}
 
 				outbuf.Reset()
-				binary.Write(outbuf, binary.LittleEndian, &numPlayers)
+				countbuf.Reset()
 				for x := -numChunks; x < numChunks; x++ {
 					for y := -numChunks; y < numChunks; y++ {
 						chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
@@ -51,13 +41,16 @@ func processGame() {
 						}
 
 						for _, target := range chunk.players {
+							numPlayers += uint32(len(chunk.players))
 							binary.Write(outbuf, binary.LittleEndian, &target.id)
 							binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
 							binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
 						}
 					}
 				}
-				writeToPlayer(player, CMD_UPDATE, outbuf.Bytes())
+
+				binary.Write(countbuf, binary.LittleEndian, &numPlayers)
+				writeToPlayer(player, CMD_UPDATE, append(countbuf.Bytes(), outbuf.Bytes()...))
 				//buf := fmt.Sprintf("b/sec: %v", len(outbuf.Bytes())*15)
 				//fmt.Println(buf)
 			}
