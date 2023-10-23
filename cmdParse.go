@@ -102,8 +102,8 @@ func cmd_move(player *playerData, data []byte) {
 	var newPos XY = XY{X: uint32(int(player.pos.X) + int(newPosX)),
 		Y: uint32(int(player.pos.Y) + int(newPosY))}
 
-	for x := -1; x < 1; x++ {
-		for y := -1; y < 1; y++ {
+	for x := -2; x < 2; x++ {
+		for y := -2; y < 2; y++ {
 			chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
 				Y: uint32(int(player.pos.Y/chunkDiv) + y)}
 			chunk := player.area.chunks[chunkPos]
