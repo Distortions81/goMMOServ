@@ -43,4 +43,6 @@ type chunkData struct {
 type objectData struct {
 	name string
 	uid  uint64
+
+	pos XY
 }

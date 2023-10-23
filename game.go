@@ -30,6 +30,11 @@ func processGame() {
 			var outsize atomic.Uint32
 			/* TODO split into list-sections for less overhead */
 			for _, player := range playerList {
+
+				if player.bot {
+					continue
+				}
+
 				wg.Add()
 				go func(player *playerData) {
 					var numPlayers uint32
@@ -70,7 +75,7 @@ func processGame() {
 			took := time.Since(loopStart)
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
 
-			if gTestMode && gameTick%75 == 0 {
+			if gTestMode && gameTick%900 == 0 {
 				fmt.Printf("Out: %vmbit\n", outsize.Load()*15/1024/1024*8)
 			}
 
@@ -78,7 +83,7 @@ func processGame() {
 				time.Sleep(remaining)
 
 				if gTestMode {
-					if gameTick%75 == 0 {
+					if gameTick%900 == 0 {
 						fmt.Printf("took: %v\n", took.Round(time.Millisecond))
 					}
 				}
