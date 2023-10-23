@@ -102,28 +102,36 @@ func cmd_move(player *playerData, data []byte) {
 	var newPos XY = XY{X: uint32(int(player.pos.X) + int(newPosX)),
 		Y: uint32(int(player.pos.Y) + int(newPosY))}
 
-	chunkPos := XY{X: player.pos.X / chunkDiv, Y: player.pos.Y / chunkDiv}
+	for x := -1; x < 1; x++ {
+		for y := -1; y < 1; y++ {
+			chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
+				Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+			chunk := player.area.chunks[chunkPos]
+			if chunk == nil {
+				continue
+			}
 
-	chunk := player.area.chunks[chunkPos]
-	for _, target := range chunk.players {
-		if target.id == player.id {
-			//Skip self
-			continue
+			for _, target := range chunk.players {
+				if target.id == player.id {
+					//Skip self
+					continue
+				}
+				dist := distance(target.pos, newPos)
+
+				if dist < 10 {
+					fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
+					newPos.X += 24
+					newPos.Y += 24
+					movePlayer(player.area, newPos, player)
+
+					return
+				} else if dist < 24 {
+					fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
+					return
+				}
+
+			}
 		}
-		dist := distance(target.pos, newPos)
-
-		if dist < 10 {
-			fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
-			newPos.X += 24
-			newPos.Y += 24
-			movePlayer(player.area, newPos, player)
-
-			return
-		} else if dist < 24 {
-			fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
-			return
-		}
-
 	}
 
 	movePlayer(player.area, newPos, player)
