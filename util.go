@@ -57,10 +57,21 @@ func convPos(pos XY) XYs {
 var playerTopID uint32
 var playerIDLock sync.Mutex
 
+var objectTopID uint64
+var objectIDLock sync.Mutex
+
 func makePlayerID() uint32 {
 	playerIDLock.Lock()
 	defer playerIDLock.Unlock()
 
 	playerTopID++
 	return playerTopID
+}
+
+func makObjectID() uint64 {
+	objectIDLock.Lock()
+	defer objectIDLock.Unlock()
+
+	objectTopID++
+	return objectTopID
 }

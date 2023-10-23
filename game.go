@@ -9,7 +9,6 @@ import (
 )
 
 const FrameSpeedNS = 66666666
-const cropSize = 512 + 24
 
 func processGame() {
 	var gameTick uint64
@@ -25,24 +24,16 @@ func processGame() {
 			pListLock.RLock()
 
 			for _, player := range playerList {
-				if player.conn == nil {
-					continue
-				}
 				outbuf.Reset()
-				var numPlayers uint32 = 0
-				var tmpList []*playerData
-				for _, target := range playerList {
-					xdiff := int(player.pos.X) - int(target.pos.X)
-					ydiff := int(player.pos.Y) - int(target.pos.Y)
-					if xdiff > cropSize || ydiff > cropSize ||
-						xdiff < -cropSize || ydiff < -cropSize {
-						continue
-					}
-					tmpList = append(tmpList, target)
-					numPlayers++
-				}
+
+				superChunkPos := XY{X: player.pos.X / superChunkDiv, Y: player.pos.Y / superChunkDiv}
+				chunkPos := XY{X: player.pos.X / chunkDiv, Y: player.pos.Y / chunkDiv}
+				chunk := player.area.superChunks[superChunkPos].chunks[chunkPos]
+
+				var numPlayers uint32 = uint32(len(chunk.players))
+
 				binary.Write(outbuf, binary.LittleEndian, &numPlayers)
-				for _, target := range tmpList {
+				for _, target := range chunk.players {
 					binary.Write(outbuf, binary.LittleEndian, &target.id)
 					binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
 					binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
@@ -71,12 +62,74 @@ func processGame() {
 	}()
 
 	if gTestMode {
-		for i := 0; i < 5000; i++ {
-			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(10240)), Y: uint32(int(xyHalf) + rand.Intn(10240))}
-			player := &playerData{id: makePlayerID(), pos: startLoc}
+		for i := 0; i < 50000; i++ {
+			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(30000)),
+				Y: uint32(int(xyHalf) + rand.Intn(30000))}
+			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea}
 			pListLock.Lock()
 			playerList[player.id] = player
+			addPlayerToWorld(player.area, startLoc, player)
 			pListLock.Unlock()
 		}
 	}
+}
+
+const chunkDiv = 128
+const superChunkDiv = 128 * chunkDiv
+
+func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
+	if area == nil {
+		return
+	}
+	superChunkPos := XY{X: pos.X / superChunkDiv, Y: pos.Y / superChunkDiv}
+	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
+
+	superChunk := area.superChunks[superChunkPos]
+
+	/* Create superchunk if needed */
+	if superChunk == nil {
+		area.superChunks[superChunkPos] = &superChunkData{chunks: make(map[XY]*chunkData)}
+		doLog(true, "Created superChunk: %v,%v", superChunkPos.X, superChunkPos.Y)
+	}
+
+	/* Create chunk if needed */
+	chunk := area.superChunks[superChunkPos].chunks[chunkPos]
+	if chunk == nil {
+		area.superChunks[superChunkPos].chunks[chunkPos] = &chunkData{}
+		doLog(true, "Created chunk: %v,%v", chunkPos.X, chunkPos.Y)
+	}
+
+	/* Create entry */
+	area.superChunks[superChunkPos].chunks[chunkPos].players =
+		append(area.superChunks[superChunkPos].chunks[chunkPos].players,
+			player)
+}
+
+func removePlayerWorld(area *areaData, pos XY, player *playerData) {
+	if area == nil {
+		return
+	}
+
+	superChunkPos := XY{X: pos.X / superChunkDiv, Y: pos.Y / superChunkDiv}
+	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
+
+	chunkPlayers := area.superChunks[superChunkPos].chunks[chunkPos].players
+	var deleteme int = -1
+	var numPlayers = len(chunkPlayers) - 1
+	for t, target := range chunkPlayers {
+		if target.id == player.id {
+			deleteme = t
+			break
+		}
+	}
+	area.superChunks[superChunkPos].chunks[chunkPos].players[deleteme] =
+		area.superChunks[superChunkPos].chunks[chunkPos].players[numPlayers]
+
+	area.superChunks[superChunkPos].chunks[chunkPos].players = chunkPlayers[:numPlayers]
+}
+
+func movePlayer(area *areaData, pos XY, player *playerData) {
+	removePlayerWorld(area, player.pos, player)
+	addPlayerToWorld(area, pos, player)
+	player.pos = pos
 }

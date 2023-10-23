@@ -10,6 +10,7 @@ type playerData struct {
 	conn *websocket.Conn
 	id   uint32
 	pos  XY
+	area *areaData
 
 	lock sync.Mutex
 }
@@ -30,18 +31,19 @@ type XYs struct {
 }
 
 type areaData struct {
-	superChunks []superChunk
+	superChunks map[XY]*superChunkData
 }
 
-type superChunk struct {
-	chunks []chunkData
+type superChunkData struct {
+	chunks map[XY]*chunkData
 }
 
 type chunkData struct {
 	objects []*objectData
+	players []*playerData
 }
 
 type objectData struct {
 	name string
-	uid  uint32
+	uid  uint64
 }

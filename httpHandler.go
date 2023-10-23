@@ -51,9 +51,10 @@ func handleConnection(conn *websocket.Conn) {
 	}
 
 	startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(128)), Y: uint32(int(xyHalf) + rand.Intn(128))}
-	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc}
+	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc, area: &testArea}
 	pListLock.Lock()
 	playerList[player.id] = player
+	addPlayerToWorld(&testArea, startLoc, player)
 	pListLock.Unlock()
 
 	conn.SetReadLimit(int64(maxNetRead))

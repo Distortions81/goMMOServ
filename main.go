@@ -18,8 +18,7 @@ func main() {
 	defer time.Sleep(time.Second)
 
 	/* make test area */
-	testChunks := []chunkData{}
-	testSuperChunk := []superChunk{{chunks: testChunks}}
+	testSuperChunk := make(map[XY]*superChunkData)
 	testArea = areaData{superChunks: testSuperChunk}
 
 	playerList = make(map[uint32]*playerData)

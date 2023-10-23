@@ -90,6 +90,9 @@ func cmd_chat(player *playerData, data []byte) {
 
 func cmd_move(player *playerData, data []byte) {
 
+	pListLock.Lock()
+	defer pListLock.Unlock()
+
 	inbuf := bytes.NewBuffer(data)
 
 	var newPosX, newPosY int8
@@ -98,8 +101,12 @@ func cmd_move(player *playerData, data []byte) {
 
 	var newPos XY = XY{X: uint32(int(player.pos.X) + int(newPosX)), Y: uint32(int(player.pos.Y) + int(newPosY))}
 
-	for t, target := range playerList {
-		if t == player.id {
+	superChunkPos := XY{X: player.pos.X / superChunkDiv, Y: player.pos.Y / superChunkDiv}
+	chunkPos := XY{X: player.pos.X / chunkDiv, Y: player.pos.Y / chunkDiv}
+
+	chunk := player.area.superChunks[superChunkPos].chunks[chunkPos]
+	for _, target := range chunk.players {
+		if target.id == player.id {
 			//Skip self
 			continue
 		}
@@ -109,7 +116,8 @@ func cmd_move(player *playerData, data []byte) {
 			fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
 			newPos.X += 24
 			newPos.Y += 24
-			player.pos = newPos
+			movePlayer(player.area, newPos, player)
+
 			return
 		} else if dist < 24 {
 			fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
@@ -118,7 +126,7 @@ func cmd_move(player *playerData, data []byte) {
 
 	}
 
-	player.pos = newPos
+	movePlayer(player.area, newPos, player)
 
 	//doLog(true, "Move: %v,%v", newPosX, newPosY)
 }
