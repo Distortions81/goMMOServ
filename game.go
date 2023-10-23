@@ -25,8 +25,6 @@ func processGame() {
 			pListLock.RLock()
 
 			for _, player := range playerList {
-
-				const numChunks = 6
 				var numPlayers uint32
 
 				outbuf.Reset()
@@ -69,14 +67,14 @@ func processGame() {
 				}
 
 			} else { /*We are lagging behind realtime*/
-				doLog(true, "Unable to keep up: took: %v\n", took)
+				doLog(true, "Unable to keep up: took: %v", took)
 			}
 
 		}
 	}()
 
 	if gTestMode {
-		for i := 0; i < 1000; i++ {
+		for i := 0; i < 1500; i++ {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(5000)),
 				Y: uint32(int(xyHalf) + rand.Intn(5000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, bot: true}
@@ -88,7 +86,8 @@ func processGame() {
 	}
 }
 
-const chunkDiv = 128
+const chunkDiv = 256
+const numChunks = 3
 
 func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 	if area == nil {
