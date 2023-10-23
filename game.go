@@ -62,8 +62,8 @@ func processGame() {
 					}
 				}
 				writeToPlayer(player, CMD_UPDATE, outbuf.Bytes())
-				buf := fmt.Sprintf("b/sec: %v", len(outbuf.Bytes())*15)
-				fmt.Println(buf)
+				//buf := fmt.Sprintf("b/sec: %v", len(outbuf.Bytes())*15)
+				//fmt.Println(buf)
 			}
 			pListLock.RUnlock()
 
