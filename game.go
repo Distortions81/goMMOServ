@@ -134,6 +134,9 @@ func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 }
 
 func removePlayerWorld(area *areaData, pos XY, player *playerData) {
+	if player == nil {
+		return
+	}
 	if area == nil {
 		return
 	}

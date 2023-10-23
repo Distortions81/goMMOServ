@@ -32,12 +32,18 @@ func newParser(input []byte, player *playerData) {
 		cmd_chat(player, data)
 	case CMD_SCREENSIZE: /* Vision */
 		cmd_screensize(player, data)
+	case CMD_COMMAND:
+		cmd_command(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		removePlayer(player, "INVALID COMMAND")
 
 		return
 	}
+}
+
+func cmd_command(player *playerData, data []byte) {
+
 }
 
 func cmd_screensize(player *playerData, data []byte) {

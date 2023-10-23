@@ -29,6 +29,7 @@ const (
 	CMD_UPDATE
 	CMD_CHAT
 	CMD_SCREENSIZE
+	CMD_COMMAND
 )
 
 /* Used for debug messages, this could be better */
@@ -43,6 +44,7 @@ func init() {
 	cmdNames[CMD_UPDATE] = "CMD_UPDATE"
 	cmdNames[CMD_CHAT] = "CMD_CHAT"
 	cmdNames[CMD_SCREENSIZE] = "CMD_SCREENSIZE"
+	cmdNames[CMD_COMMAND] = "CMD_COMMAND"
 }
 
 const xyHalf = 2147483648
