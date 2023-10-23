@@ -82,6 +82,9 @@ func cmd_chat(player *playerData, data []byte) {
 	pName := fmt.Sprintf("Player-%v says: %v", player.id, string(data))
 
 	for _, target := range playerList {
+		if target.conn == nil {
+			continue
+		}
 		writeToPlayer(target, CMD_CHAT, []byte(pName))
 	}
 }
@@ -92,6 +95,9 @@ func send_chat(data string) {
 	defer pListLock.RUnlock()
 
 	for _, target := range playerList {
+		if target.conn == nil {
+			continue
+		}
 		writeToPlayer(target, CMD_CHAT, []byte(data))
 	}
 }

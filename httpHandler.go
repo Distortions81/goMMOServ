@@ -75,6 +75,9 @@ func handleConnection(conn *websocket.Conn) {
 
 func removePlayer(player *playerData, reason string) {
 
+	if player == nil {
+		return
+	}
 	reasonStr := fmt.Sprintf("Player-%v left the game. (%v)", player.id, reason)
 	send_chat(reasonStr)
 	killConnection(player, true)
@@ -88,9 +91,6 @@ func removePlayer(player *playerData, reason string) {
 
 func killConnection(player *playerData, force bool) {
 	defer reportPanic("killConnection")
-
-	player.connLock.Lock()
-	defer player.connLock.Unlock()
 
 	if player.conn != nil {
 		err := player.conn.Close()
