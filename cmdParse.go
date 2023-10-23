@@ -158,8 +158,9 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 	if player == nil {
 		return false
 	}
-	player.connLock.Lock()
-	defer player.connLock.Unlock()
+	//Not normally needed
+	//player.connLock.Lock()
+	//defer player.connLock.Unlock()
 
 	if player.conn == nil {
 		return false

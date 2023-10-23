@@ -87,7 +87,7 @@ func removePlayer(player *playerData, reason string) {
 	pListLock.Unlock()
 
 	reasonStr := fmt.Sprintf("Player-%v left the game. (%v)", playerID, reason)
-	go send_chat(reasonStr)
+	send_chat(reasonStr)
 }
 
 func killConnection(player *playerData, force bool) {

@@ -7,8 +7,8 @@ import (
 )
 
 type playerData struct {
-	conn     *websocket.Conn
-	connLock sync.Mutex
+	conn *websocket.Conn
+	//connLock sync.Mutex
 
 	id   uint32
 	pos  XY
