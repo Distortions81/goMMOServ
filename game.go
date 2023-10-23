@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"math/rand"
 	"runtime"
+	"sync/atomic"
 	"time"
 
 	"github.com/remeh/sizedwaitgroup"
@@ -26,6 +27,7 @@ func processGame() {
 
 			pListLock.RLock()
 
+			var outsize atomic.Uint32
 			/* TODO split into list-sections for less overhead */
 			for _, player := range playerList {
 				wg.Add()
@@ -50,11 +52,13 @@ func processGame() {
 								binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
 							}
 							numPlayers += uint32(len(chunk.players))
+							outsize.Add(uint32(len(chunk.players)) * 24)
 						}
 					}
 
 					binary.Write(countbuf, binary.LittleEndian, &numPlayers)
 					writeToPlayer(player, CMD_UPDATE, append(countbuf.Bytes(), outbuf.Bytes()...))
+
 					wg.Done()
 				}(player)
 
@@ -65,6 +69,10 @@ func processGame() {
 
 			took := time.Since(loopStart)
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
+
+			if gTestMode && gameTick%75 == 0 {
+				fmt.Printf("Out: %vmbit\n", outsize.Load()*15/1024/1024*8)
+			}
 
 			if remaining > 0 { /*Kill remaining time*/
 				time.Sleep(remaining)
@@ -84,8 +92,8 @@ func processGame() {
 
 	if gTestMode {
 		for i := 0; i < 5000; i++ {
-			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(5000)),
-				Y: uint32(int(xyHalf) + rand.Intn(5000))}
+			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(30000)),
+				Y: uint32(int(xyHalf) + rand.Intn(30000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, bot: true}
 			pListLock.Lock()
 			playerList[player.id] = player
