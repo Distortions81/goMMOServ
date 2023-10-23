@@ -99,12 +99,12 @@ func cmd_move(player *playerData, data []byte) {
 	binary.Read(inbuf, binary.LittleEndian, &newPosX)
 	binary.Read(inbuf, binary.LittleEndian, &newPosY)
 
-	var newPos XY = XY{X: uint32(int(player.pos.X) + int(newPosX)), Y: uint32(int(player.pos.Y) + int(newPosY))}
+	var newPos XY = XY{X: uint32(int(player.pos.X) + int(newPosX)),
+		Y: uint32(int(player.pos.Y) + int(newPosY))}
 
-	superChunkPos := XY{X: player.pos.X / superChunkDiv, Y: player.pos.Y / superChunkDiv}
 	chunkPos := XY{X: player.pos.X / chunkDiv, Y: player.pos.Y / chunkDiv}
 
-	chunk := player.area.superChunks[superChunkPos].chunks[chunkPos]
+	chunk := player.area.chunks[chunkPos]
 	for _, target := range chunk.players {
 		if target.id == player.id {
 			//Skip self

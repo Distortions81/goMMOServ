@@ -24,19 +24,42 @@ func processGame() {
 			pListLock.RLock()
 
 			for _, player := range playerList {
+
+				if player.bot {
+					continue
+				}
+
+				const numChunks = 5
+				var numPlayers uint32
+				for x := -numChunks; x < numChunks; x++ {
+					for y := -numChunks; y < numChunks; y++ {
+						chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
+							Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+						chunk := player.area.chunks[chunkPos]
+						if chunk == nil {
+							continue
+						}
+						numPlayers += uint32(len(chunk.players))
+					}
+				}
+
 				outbuf.Reset()
-
-				superChunkPos := XY{X: player.pos.X / superChunkDiv, Y: player.pos.Y / superChunkDiv}
-				chunkPos := XY{X: player.pos.X / chunkDiv, Y: player.pos.Y / chunkDiv}
-				chunk := player.area.superChunks[superChunkPos].chunks[chunkPos]
-
-				var numPlayers uint32 = uint32(len(chunk.players))
-
 				binary.Write(outbuf, binary.LittleEndian, &numPlayers)
-				for _, target := range chunk.players {
-					binary.Write(outbuf, binary.LittleEndian, &target.id)
-					binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
-					binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
+				for x := -numChunks; x < numChunks; x++ {
+					for y := -numChunks; y < numChunks; y++ {
+						chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
+							Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+						chunk := player.area.chunks[chunkPos]
+						if chunk == nil {
+							continue
+						}
+
+						for _, target := range chunk.players {
+							binary.Write(outbuf, binary.LittleEndian, &target.id)
+							binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
+							binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
+						}
+					}
 				}
 				writeToPlayer(player, CMD_UPDATE, outbuf.Bytes())
 			}
@@ -62,10 +85,10 @@ func processGame() {
 	}()
 
 	if gTestMode {
-		for i := 0; i < 50000; i++ {
-			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(30000)),
-				Y: uint32(int(xyHalf) + rand.Intn(30000))}
-			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea}
+		for i := 0; i < 5000; i++ {
+			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(5000)),
+				Y: uint32(int(xyHalf) + rand.Intn(5000))}
+			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, bot: true}
 			pListLock.Lock()
 			playerList[player.id] = player
 			addPlayerToWorld(player.area, startLoc, player)
@@ -81,27 +104,18 @@ func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 	if area == nil {
 		return
 	}
-	superChunkPos := XY{X: pos.X / superChunkDiv, Y: pos.Y / superChunkDiv}
 	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
-	superChunk := area.superChunks[superChunkPos]
-
-	/* Create superchunk if needed */
-	if superChunk == nil {
-		area.superChunks[superChunkPos] = &superChunkData{chunks: make(map[XY]*chunkData)}
-		doLog(true, "Created superChunk: %v,%v", superChunkPos.X, superChunkPos.Y)
-	}
-
 	/* Create chunk if needed */
-	chunk := area.superChunks[superChunkPos].chunks[chunkPos]
+	chunk := area.chunks[chunkPos]
 	if chunk == nil {
-		area.superChunks[superChunkPos].chunks[chunkPos] = &chunkData{}
+		area.chunks[chunkPos] = &chunkData{}
 		doLog(true, "Created chunk: %v,%v", chunkPos.X, chunkPos.Y)
 	}
 
 	/* Create entry */
-	area.superChunks[superChunkPos].chunks[chunkPos].players =
-		append(area.superChunks[superChunkPos].chunks[chunkPos].players,
+	area.chunks[chunkPos].players =
+		append(area.chunks[chunkPos].players,
 			player)
 }
 
@@ -110,10 +124,9 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 		return
 	}
 
-	superChunkPos := XY{X: pos.X / superChunkDiv, Y: pos.Y / superChunkDiv}
 	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
-	chunkPlayers := area.superChunks[superChunkPos].chunks[chunkPos].players
+	chunkPlayers := area.chunks[chunkPos].players
 	var deleteme int = -1
 	var numPlayers = len(chunkPlayers) - 1
 	for t, target := range chunkPlayers {
@@ -122,10 +135,10 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 			break
 		}
 	}
-	area.superChunks[superChunkPos].chunks[chunkPos].players[deleteme] =
-		area.superChunks[superChunkPos].chunks[chunkPos].players[numPlayers]
+	area.chunks[chunkPos].players[deleteme] =
+		area.chunks[chunkPos].players[numPlayers]
 
-	area.superChunks[superChunkPos].chunks[chunkPos].players = chunkPlayers[:numPlayers]
+	area.chunks[chunkPos].players = chunkPlayers[:numPlayers]
 }
 
 func movePlayer(area *areaData, pos XY, player *playerData) {

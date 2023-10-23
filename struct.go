@@ -8,6 +8,7 @@ import (
 
 type playerData struct {
 	conn *websocket.Conn
+	bot  bool
 	id   uint32
 	pos  XY
 	area *areaData
@@ -31,10 +32,6 @@ type XYs struct {
 }
 
 type areaData struct {
-	superChunks map[XY]*superChunkData
-}
-
-type superChunkData struct {
 	chunks map[XY]*chunkData
 }
 
