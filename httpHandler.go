@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"log"
 	"math/rand"
 	"net/http"
@@ -65,26 +66,34 @@ func handleConnection(conn *websocket.Conn) {
 
 		if err != nil {
 			doLog(true, "Error on connection read: %v", err)
-
-			killConnection(conn, true)
-
-			player.conn = nil
-
-			pListLock.Lock()
-			delete(playerList, player.id)
-			pListLock.Unlock()
-
-			break
+			removePlayer(player, "connection lost")
+			return
 		}
 		newParser(data, player)
 	}
 }
 
-func killConnection(conn *websocket.Conn, force bool) {
+func removePlayer(player *playerData, reason string) {
+
+	reasonStr := fmt.Sprintf("Player-%v left the game. (%v)", player.id, reason)
+	send_chat(reasonStr)
+	killConnection(player, true)
+
+	pListLock.Lock()
+	removePlayerWorld(player.area, player.pos, player)
+	delete(playerList, player.id)
+	pListLock.Unlock()
+
+}
+
+func killConnection(player *playerData, force bool) {
 	defer reportPanic("killConnection")
 
-	if conn != nil {
-		err := conn.Close()
+	player.connLock.Lock()
+	defer player.connLock.Unlock()
+
+	if player.conn != nil {
+		err := player.conn.Close()
 		if err == nil || force {
 			numConnectionsLock.Lock()
 			if numConnections > 0 {
@@ -92,7 +101,7 @@ func killConnection(conn *websocket.Conn, force bool) {
 			}
 			numConnectionsLock.Unlock()
 		}
-		conn = nil
+		player.conn = nil
 	}
 }
 

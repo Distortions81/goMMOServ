@@ -31,7 +31,7 @@ func processGame() {
 			/* TODO split into list-sections for less overhead */
 			for _, player := range playerList {
 
-				if player.bot {
+				if player.conn == nil {
 					continue
 				}
 
@@ -52,6 +52,9 @@ func processGame() {
 							}
 
 							for _, target := range chunk.players {
+								if player.conn == nil {
+									continue
+								}
 								binary.Write(outbuf, binary.LittleEndian, &target.id)
 								binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
 								binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
@@ -99,7 +102,7 @@ func processGame() {
 		for i := 0; i < 5000; i++ {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(30000)),
 				Y: uint32(int(xyHalf) + rand.Intn(30000))}
-			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, bot: true}
+			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea}
 			pListLock.Lock()
 			playerList[player.id] = player
 			addPlayerToWorld(player.area, startLoc, player)

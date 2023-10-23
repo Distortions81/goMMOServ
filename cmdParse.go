@@ -34,12 +34,7 @@ func newParser(input []byte, player *playerData) {
 		cmd_screensize(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
-		killConnection(player.conn, false)
-
-		player.conn = nil
-		pListLock.Lock()
-		delete(playerList, player.id)
-		pListLock.Unlock()
+		removePlayer(player, "INVALID COMMAND")
 
 		return
 	}
@@ -68,6 +63,9 @@ func cmd_init(player *playerData, data []byte) {
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 
 	cmd_move(player, []byte{})
+
+	welcomeStr := fmt.Sprintf("Player-%v joined the game.", player.id)
+	send_chat(welcomeStr)
 }
 
 const maxChat = 256
@@ -85,6 +83,16 @@ func cmd_chat(player *playerData, data []byte) {
 
 	for _, target := range playerList {
 		writeToPlayer(target, CMD_CHAT, []byte(pName))
+	}
+}
+
+func send_chat(data string) {
+
+	pListLock.RLock()
+	defer pListLock.RUnlock()
+
+	for _, target := range playerList {
+		writeToPlayer(target, CMD_CHAT, []byte(data))
 	}
 }
 
@@ -144,8 +152,10 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 	if player == nil {
 		return false
 	}
-	if player.conn == nil {
+	player.connLock.Lock()
+	defer player.connLock.Unlock()
 
+	if player.conn == nil {
 		return false
 	}
 
@@ -157,10 +167,7 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 	}
 	if err != nil {
 		doLog(true, "Error writing response: %v", err)
-		killConnection(player.conn, false)
-		player.conn = nil
-
-		delete(playerList, player.id)
+		removePlayer(player, "connection lost")
 
 		return false
 	}
