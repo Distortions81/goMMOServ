@@ -26,6 +26,7 @@ func processGame() {
 
 			pListLock.RLock()
 
+			/* TODO split into list-sections for less overhead */
 			for _, player := range playerList {
 				wg.Add()
 				go func(player *playerData) {
