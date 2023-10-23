@@ -5,7 +5,10 @@ import (
 	"encoding/binary"
 	"fmt"
 	"math/rand"
+	"runtime"
 	"time"
+
+	"github.com/remeh/sizedwaitgroup"
 )
 
 const FrameSpeedNS = 66666666
@@ -15,8 +18,7 @@ func processGame() {
 	go func() {
 
 		var buf, cbuf []byte
-		outbuf := bytes.NewBuffer(buf)
-		countbuf := bytes.NewBuffer(cbuf)
+		wg := sizedwaitgroup.New(runtime.NumCPU())
 
 		for {
 			gameTick++
@@ -25,33 +27,41 @@ func processGame() {
 			pListLock.RLock()
 
 			for _, player := range playerList {
-				var numPlayers uint32
+				wg.Add()
+				go func(player *playerData) {
+					var numPlayers uint32
 
-				outbuf.Reset()
-				countbuf.Reset()
-				for x := -numChunks; x < numChunks; x++ {
-					for y := -numChunks; y < numChunks; y++ {
-						chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
-							Y: uint32(int(player.pos.Y/chunkDiv) + y)}
-						chunk := player.area.chunks[chunkPos]
-						if chunk == nil {
-							continue
-						}
+					outbuf := bytes.NewBuffer(buf)
+					countbuf := bytes.NewBuffer(cbuf)
 
-						for _, target := range chunk.players {
-							numPlayers += uint32(len(chunk.players))
-							binary.Write(outbuf, binary.LittleEndian, &target.id)
-							binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
-							binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
+					for x := -numChunks; x < numChunks; x++ {
+						for y := -numChunks; y < numChunks; y++ {
+							chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
+								Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+							chunk := player.area.chunks[chunkPos]
+							if chunk == nil {
+								continue
+							}
+
+							for _, target := range chunk.players {
+								numPlayers += uint32(len(chunk.players))
+								binary.Write(outbuf, binary.LittleEndian, &target.id)
+								binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
+								binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
+							}
 						}
 					}
-				}
 
-				binary.Write(countbuf, binary.LittleEndian, &numPlayers)
-				writeToPlayer(player, CMD_UPDATE, append(countbuf.Bytes(), outbuf.Bytes()...))
-				//buf := fmt.Sprintf("b/sec: %v", len(outbuf.Bytes())*15)
-				//fmt.Println(buf)
+					binary.Write(countbuf, binary.LittleEndian, &numPlayers)
+					writeToPlayer(player, CMD_UPDATE, append(countbuf.Bytes(), outbuf.Bytes()...))
+					//buf := fmt.Sprintf("b/sec: %v", len(outbuf.Bytes())*15)
+					//fmt.Println(buf)
+					wg.Done()
+				}(player)
+
 			}
+			wg.Wait()
+
 			pListLock.RUnlock()
 
 			took := time.Since(loopStart)
@@ -74,7 +84,7 @@ func processGame() {
 	}()
 
 	if gTestMode {
-		for i := 0; i < 1500; i++ {
+		for i := 0; i < 5000; i++ {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(5000)),
 				Y: uint32(int(xyHalf) + rand.Intn(5000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, bot: true}
