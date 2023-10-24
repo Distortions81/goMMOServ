@@ -27,6 +27,7 @@ func newParser(input []byte, player *playerData) {
 	switch d {
 	case CMD_INIT: /*INIT*/
 		cmd_init(player, data)
+		cmd_playernames(player, nil)
 	case CMD_MOVE: /*MOVE*/
 		cmd_move(player, data)
 	case CMD_CHAT: /*CHAT*/
@@ -47,15 +48,6 @@ func newParser(input []byte, player *playerData) {
 
 func cmd_playernames(player *playerData, data []byte) {
 
-	pListLock.RLock()
-	defer pListLock.RUnlock()
-
-	var idsearch uint32 = 0
-	if data != nil {
-		inbuf := bytes.NewBuffer(data)
-		binary.Read(inbuf, binary.LittleEndian, &idsearch)
-	}
-
 	var buf []byte
 	outbuf := bytes.NewBuffer(buf)
 
@@ -64,25 +56,25 @@ func cmd_playernames(player *playerData, data []byte) {
 		if player.name == "" {
 			continue
 		}
-		if idsearch != 0 && idsearch != player.id {
-			continue
-		}
 		numNames++
 	}
+	if numNames == 0 {
+		return
+	}
+
 	binary.Write(outbuf, binary.LittleEndian, &numNames)
 
 	for _, player := range playerList {
 		if player.name == "" {
 			continue
 		}
-		if idsearch != 0 && idsearch != player.id {
-			continue
-		}
 		binary.Write(outbuf, binary.LittleEndian, &player.id)
+
 		var nameLen uint16 = uint16(len(player.name))
 		binary.Write(outbuf, binary.LittleEndian, &nameLen)
+
 		for x := 0; x < int(nameLen); x++ {
-			var playerRune = player.name[x]
+			var playerRune = rune(player.name[x])
 			binary.Write(outbuf, binary.LittleEndian, &playerRune)
 		}
 	}
@@ -115,7 +107,7 @@ func cmd_command(player *playerData, data []byte) {
 		}
 		player.name = allParams
 		writeToPlayer(player, CMD_COMMAND, []byte("Name set."))
-		cmd_playernames(player, nil)
+		cmd_playernames(player, []byte(allParams))
 	}
 
 }
