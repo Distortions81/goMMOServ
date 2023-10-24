@@ -50,12 +50,26 @@ func cmd_playernames(player *playerData, data []byte) {
 	pListLock.RLock()
 	defer pListLock.RUnlock()
 
-	inbuf := bytes.NewBuffer(data)
 	var idsearch uint32 = 0
-	binary.Read(inbuf, binary.LittleEndian, &idsearch)
+	if data != nil {
+		inbuf := bytes.NewBuffer(data)
+		binary.Read(inbuf, binary.LittleEndian, &idsearch)
+	}
 
 	var buf []byte
 	outbuf := bytes.NewBuffer(buf)
+
+	var numNames uint32
+	for _, player := range playerList {
+		if player.name == "" {
+			continue
+		}
+		if idsearch != 0 && idsearch != player.id {
+			continue
+		}
+		numNames++
+	}
+	binary.Write(outbuf, binary.LittleEndian, &numNames)
 
 	for _, player := range playerList {
 		if player.name == "" {
@@ -72,6 +86,8 @@ func cmd_playernames(player *playerData, data []byte) {
 			binary.Write(outbuf, binary.LittleEndian, &playerRune)
 		}
 	}
+
+	writeToPlayer(player, CMD_PLAYERNAMES, outbuf.Bytes())
 }
 
 func cmd_command(player *playerData, data []byte) {
@@ -99,6 +115,7 @@ func cmd_command(player *playerData, data []byte) {
 		}
 		player.name = allParams
 		writeToPlayer(player, CMD_COMMAND, []byte("Name set."))
+		cmd_playernames(player, nil)
 	}
 
 }
