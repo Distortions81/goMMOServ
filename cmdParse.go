@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"strings"
 
 	"github.com/gorilla/websocket"
 )
@@ -20,8 +21,8 @@ func newParser(input []byte, player *playerData) {
 	d := CMD(input[0])
 	data := input[1:]
 
-	//cmdName := cmdNames[d]
-	//doLog(true, "ID: %v, Received: %v", player.id, cmdName)
+	cmdName := cmdNames[d]
+	doLog(true, "ID: %v, Received: %v", player.id, cmdName)
 
 	switch d {
 	case CMD_INIT: /*INIT*/
@@ -43,6 +44,30 @@ func newParser(input []byte, player *playerData) {
 }
 
 func cmd_command(player *playerData, data []byte) {
+	str := string(data)
+
+	if !strings.HasPrefix(str, "/") {
+		writeToPlayer(player, CMD_COMMAND, []byte("Commmands must begin with /"))
+		return
+	}
+	words := strings.Split(str, " ")
+	numWords := len(words)
+
+	if numWords < 2 {
+		return
+	}
+
+	allParams := strings.Join(words[1:], " ")
+	allParamLen := len(allParams)
+
+	command := strings.TrimPrefix(words[0], "/")
+
+	if strings.EqualFold(command, "name") {
+		if allParamLen < 3 || allParamLen > 32 {
+			return
+		}
+		player.name = allParams
+	}
 
 }
 

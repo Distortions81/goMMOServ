@@ -10,6 +10,8 @@ type playerData struct {
 	conn *websocket.Conn
 	//connLock sync.Mutex
 
+	name string
+
 	id   uint32
 	pos  XY
 	area *areaData
