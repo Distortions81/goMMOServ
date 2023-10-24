@@ -1,8 +1,6 @@
 package main
 
 import (
-	"sync"
-
 	"github.com/gorilla/websocket"
 )
 
@@ -15,8 +13,6 @@ type playerData struct {
 	id   uint32
 	pos  XY
 	area *areaData
-
-	lock sync.Mutex
 }
 
 type XY struct {

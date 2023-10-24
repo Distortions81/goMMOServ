@@ -50,7 +50,7 @@ func CompressZip(data []byte) []byte {
 	return b.Bytes()
 }
 
-func convPos(pos XY) XYs {
+func posToSignedPos(pos XY) XYs {
 	return XYs{X: int32(pos.X - xyHalf), Y: int32(pos.Y - xyHalf)}
 }
 

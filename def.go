@@ -50,5 +50,3 @@ func init() {
 }
 
 const xyHalf = 2147483648
-
-var xyCenter XY = XY{X: xyHalf, Y: xyHalf}
