@@ -36,10 +36,12 @@ func processGame() {
 
 				}
 
-				player.health--
-				if player.health < 1 {
-					player.health = 100
-				}
+				/*
+					player.health--
+					if player.health < 1 {
+						player.health = 100
+					}
+				*/
 
 				wg.Add()
 				go func(player *playerData) {
