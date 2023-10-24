@@ -8,7 +8,8 @@ type playerData struct {
 	conn *websocket.Conn
 	//connLock sync.Mutex
 
-	name string
+	name   string
+	health int16
 
 	id   uint32
 	pos  XY

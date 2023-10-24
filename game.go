@@ -33,7 +33,15 @@ func processGame() {
 
 				if player.conn == nil {
 					continue
+
 				}
+
+				/*
+					player.health--
+					if player.health < 1 {
+						player.health = 100
+					}
+				*/
 
 				wg.Add()
 				go func(player *playerData) {
@@ -58,6 +66,8 @@ func processGame() {
 								binary.Write(outbuf, binary.LittleEndian, &target.id)
 								binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
 								binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
+								//Eventually move me to an event
+								binary.Write(outbuf, binary.LittleEndian, &target.health)
 							}
 							numPlayers += uint32(len(chunk.players))
 							outsize.Add(uint32(len(chunk.players)) * 24)
@@ -102,7 +112,7 @@ func processGame() {
 		for i := 0; i < 5000; i++ {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(30000)),
 				Y: uint32(int(xyHalf) + rand.Intn(30000))}
-			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea}
+			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, health: 100}
 			pListLock.Lock()
 			playerList[player.id] = player
 			addPlayerToWorld(player.area, startLoc, player)

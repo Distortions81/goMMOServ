@@ -52,7 +52,7 @@ func handleConnection(conn *websocket.Conn) {
 	}
 
 	startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(128)), Y: uint32(int(xyHalf) + rand.Intn(128))}
-	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc, area: &testArea}
+	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc, area: &testArea, health: 100}
 	pListLock.Lock()
 	playerList[player.id] = player
 	addPlayerToWorld(&testArea, startLoc, player)

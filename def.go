@@ -1,6 +1,6 @@
 package main
 
-var protoVersion uint16 = 2
+var protoVersion uint16 = 3
 
 /* Directions */
 type DIR uint8
