@@ -9,7 +9,7 @@ type playerData struct {
 	//connLock sync.Mutex
 
 	name   string
-	health int16
+	health int8
 
 	id   uint32
 	pos  XY
