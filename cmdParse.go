@@ -27,7 +27,7 @@ func newParser(input []byte, player *playerData) {
 	switch d {
 	case CMD_INIT: /*INIT*/
 		cmd_init(player, data)
-		cmd_playernames(player, nil)
+		sendPlayernames(player, false)
 	case CMD_MOVE: /*MOVE*/
 		cmd_move(player, data)
 	case CMD_CHAT: /*CHAT*/
@@ -36,8 +36,6 @@ func newParser(input []byte, player *playerData) {
 		cmd_screensize(player, data)
 	case CMD_COMMAND:
 		cmd_command(player, data)
-	case CMD_PLAYERNAMES:
-		cmd_playernames(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		removePlayer(player, "INVALID COMMAND")
@@ -46,7 +44,7 @@ func newParser(input []byte, player *playerData) {
 	}
 }
 
-func cmd_playernames(player *playerData, data []byte) {
+func sendPlayernames(player *playerData, setName bool) {
 
 	var buf []byte
 	outbuf := bytes.NewBuffer(buf)
@@ -64,22 +62,33 @@ func cmd_playernames(player *playerData, data []byte) {
 
 	binary.Write(outbuf, binary.LittleEndian, &numNames)
 
-	for _, player := range playerList {
-		if player.name == "" {
+	for _, target := range playerList {
+		if target.name == "" {
 			continue
 		}
-		binary.Write(outbuf, binary.LittleEndian, &player.id)
+		if setName {
+			if target.id != player.id {
+				continue
+			}
+		}
+		binary.Write(outbuf, binary.LittleEndian, &target.id)
 
-		var nameLen uint16 = uint16(len(player.name))
+		var nameLen uint16 = uint16(len(target.name))
 		binary.Write(outbuf, binary.LittleEndian, &nameLen)
 
 		for x := 0; x < int(nameLen); x++ {
-			var playerRune = rune(player.name[x])
+			var playerRune = rune(target.name[x])
 			binary.Write(outbuf, binary.LittleEndian, &playerRune)
 		}
 	}
 
-	writeToPlayer(player, CMD_PLAYERNAMES, outbuf.Bytes())
+	if setName {
+		for _, target := range playerList {
+			writeToPlayer(target, CMD_PLAYERNAMES, outbuf.Bytes())
+		}
+	} else {
+		writeToPlayer(player, CMD_PLAYERNAMES, outbuf.Bytes())
+	}
 }
 
 func cmd_command(player *playerData, data []byte) {
@@ -107,7 +116,7 @@ func cmd_command(player *playerData, data []byte) {
 		}
 		player.name = allParams
 		writeToPlayer(player, CMD_COMMAND, []byte("Name set."))
-		cmd_playernames(player, []byte(allParams))
+		sendPlayernames(player, true)
 	}
 
 }
