@@ -35,11 +35,42 @@ func newParser(input []byte, player *playerData) {
 		cmd_screensize(player, data)
 	case CMD_COMMAND:
 		cmd_command(player, data)
+	case CMD_PLAYERNAMES:
+		cmd_playernames(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		removePlayer(player, "INVALID COMMAND")
 
 		return
+	}
+}
+
+func cmd_playernames(player *playerData, data []byte) {
+
+	pListLock.RLock()
+	defer pListLock.RUnlock()
+
+	inbuf := bytes.NewBuffer(data)
+	var idsearch uint32 = 0
+	binary.Read(inbuf, binary.LittleEndian, &idsearch)
+
+	var buf []byte
+	outbuf := bytes.NewBuffer(buf)
+
+	for _, player := range playerList {
+		if player.name == "" {
+			continue
+		}
+		if idsearch != 0 && idsearch != player.id {
+			continue
+		}
+		binary.Write(outbuf, binary.LittleEndian, &player.id)
+		var nameLen uint16 = uint16(len(player.name))
+		binary.Write(outbuf, binary.LittleEndian, &nameLen)
+		for x := 0; x < int(nameLen); x++ {
+			var playerRune = player.name[x]
+			binary.Write(outbuf, binary.LittleEndian, &playerRune)
+		}
 	}
 }
 
@@ -67,6 +98,7 @@ func cmd_command(player *playerData, data []byte) {
 			return
 		}
 		player.name = allParams
+		writeToPlayer(player, CMD_COMMAND, []byte("Name set."))
 	}
 
 }
