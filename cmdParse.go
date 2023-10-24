@@ -102,6 +102,7 @@ func cmd_command(player *playerData, data []byte) {
 	numWords := len(words)
 
 	if numWords < 2 {
+		writeToPlayer(player, CMD_COMMAND, []byte("Commands: /name playerName"))
 		return
 	}
 
@@ -111,14 +112,17 @@ func cmd_command(player *playerData, data []byte) {
 	command := strings.TrimPrefix(words[0], "/")
 
 	if strings.EqualFold(command, "name") {
-		if allParamLen < 3 || allParamLen > 32 {
+		if allParamLen < 3 {
+			writeToPlayer(player, CMD_COMMAND, []byte("Name not long enough."))
+			return
+		} else if allParamLen > 32 {
+			writeToPlayer(player, CMD_COMMAND, []byte("Name too long."))
 			return
 		}
 		player.name = allParams
 		writeToPlayer(player, CMD_COMMAND, []byte("Name set."))
 		sendPlayernames(player, true)
 	}
-
 }
 
 func cmd_screensize(player *playerData, data []byte) {
