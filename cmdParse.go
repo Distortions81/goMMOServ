@@ -95,7 +95,7 @@ func cmd_command(player *playerData, data []byte) {
 	str := string(data)
 
 	if !strings.HasPrefix(str, "/") {
-		writeToPlayer(player, CMD_COMMAND, []byte("Commmands must begin with /"))
+		writeToPlayer(player, CMD_COMMAND, []byte("Commmands must begin with: /  (try /help)"))
 		return
 	}
 	words := strings.Split(str, " ")
