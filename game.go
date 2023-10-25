@@ -125,8 +125,8 @@ func processGame() {
 	}
 }
 
-const chunkDiv = 256
-const numChunks = 3
+const chunkDiv = 128
+const numChunks = 5
 
 func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 	defer reportPanic("addPlayerToWorld")
