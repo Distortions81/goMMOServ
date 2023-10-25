@@ -246,7 +246,7 @@ func cmd_move(player *playerData, data []byte) {
 }
 
 func writeToPlayer(player *playerData, header CMD, input []byte) bool {
-	//defer reportPanic("writeToPlayer")
+	//defer reportPanic("writeToPlayer") (EOF causes panic)
 	if player == nil {
 		return false
 	}
