@@ -21,8 +21,10 @@ func newParser(input []byte, player *playerData) {
 	d := CMD(input[0])
 	data := input[1:]
 
-	cmdName := cmdNames[d]
-	doLog(true, "ID: %v, Received: %v", player.id, cmdName)
+	if d != CMD_MOVE {
+		cmdName := cmdNames[d]
+		doLog(true, "ID: %v, Received: %v, Data: %v", player.id, cmdName, string(data))
+	}
 
 	switch d {
 	case CMD_INIT: /*INIT*/
@@ -243,14 +245,18 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 	if player == nil {
 		return false
 	}
-	//Not normally needed
-	//player.connLock.Lock()
-	//defer player.connLock.Unlock()
+
+	player.connLock.Lock()
+	defer player.connLock.Unlock()
 
 	if player.conn == nil {
 		return false
 	}
 
+	if header != CMD_UPDATE {
+		cmdName := cmdNames[header]
+		doLog(true, "ID: %v, Sent: %v, Data: %v", player.id, cmdName, string(input))
+	}
 	var err error
 	if input == nil {
 		err = player.conn.WriteMessage(websocket.BinaryMessage, []byte{byte(header)})

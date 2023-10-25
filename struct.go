@@ -1,12 +1,14 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/gorilla/websocket"
 )
 
 type playerData struct {
-	conn *websocket.Conn
-	//connLock sync.Mutex
+	conn     *websocket.Conn
+	connLock sync.Mutex
 
 	name   string
 	health int8
