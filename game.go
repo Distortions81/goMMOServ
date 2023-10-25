@@ -77,7 +77,7 @@ func processGame() {
 								binary.Write(outbuf, binary.LittleEndian, &target.health)
 							}
 							numPlayers += uint32(len(chunk.players))
-							outsize.Add(uint32(len(chunk.players)) * 24)
+							outsize.Add(uint32(len(chunk.players)) * 104)
 						}
 					}
 
@@ -95,15 +95,15 @@ func processGame() {
 			took := time.Since(loopStart)
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
 
-			if gTestMode && gameTick%900 == 0 {
-				fmt.Printf("Out: %vmbit\n", outsize.Load()*15/1024/1024*8)
+			if gTestMode && gameTick%450 == 0 {
+				fmt.Printf("Out: %vkbit\n", outsize.Load()*15/1024)
 			}
 
 			if remaining > 0 { /*Kill remaining time*/
 				time.Sleep(remaining)
 
 				if gTestMode {
-					if gameTick%900 == 0 {
+					if gameTick%450 == 0 {
 						fmt.Printf("took: %v\n", took.Round(time.Millisecond))
 					}
 				}
@@ -117,8 +117,8 @@ func processGame() {
 
 	if gTestMode {
 		for i := 0; i < 5000; i++ {
-			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(30000)),
-				Y: uint32(int(xyHalf) + rand.Intn(30000))}
+			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(20000)),
+				Y: uint32(int(xyHalf) + rand.Intn(20000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, health: 100}
 			pListLock.Lock()
 			playerList[player.id] = player
