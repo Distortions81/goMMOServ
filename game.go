@@ -14,6 +14,9 @@ import (
 
 const FrameSpeedNS = 66666666
 
+const chunkDiv = 128
+const numChunks = 5
+
 func processGame() {
 	defer reportPanic("processGame")
 
@@ -124,9 +127,6 @@ func processGame() {
 		}
 	}
 }
-
-const chunkDiv = 128
-const numChunks = 5
 
 func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 	defer reportPanic("addPlayerToWorld")
