@@ -74,6 +74,7 @@ func handleConnection(conn *websocket.Conn) {
 }
 
 func removePlayer(player *playerData, reason string) {
+	defer reportPanic("removePlayer")
 
 	if player == nil {
 		return

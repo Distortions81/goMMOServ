@@ -9,6 +9,8 @@ import (
 )
 
 func distance(a, b XY) float64 {
+	defer reportPanic("distance")
+
 	dx := a.X - b.X
 	dy := a.Y - b.Y
 
@@ -50,10 +52,6 @@ func CompressZip(data []byte) []byte {
 	return b.Bytes()
 }
 
-func posToSignedPos(pos XY) XYs {
-	return XYs{X: int32(pos.X - xyHalf), Y: int32(pos.Y - xyHalf)}
-}
-
 var playerTopID uint32
 var playerIDLock sync.Mutex
 
@@ -61,6 +59,8 @@ var objectTopID uint64
 var objectIDLock sync.Mutex
 
 func makePlayerID() uint32 {
+	defer reportPanic("makePlayerID")
+
 	playerIDLock.Lock()
 	defer playerIDLock.Unlock()
 
@@ -69,6 +69,8 @@ func makePlayerID() uint32 {
 }
 
 func makObjectID() uint64 {
+	defer reportPanic("makObjectID")
+
 	objectIDLock.Lock()
 	defer objectIDLock.Unlock()
 

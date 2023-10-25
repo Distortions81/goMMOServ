@@ -47,6 +47,7 @@ func newParser(input []byte, player *playerData) {
 }
 
 func sendPlayernames(player *playerData, setName bool) {
+	defer reportPanic("sendPlayernames")
 
 	var buf []byte
 	outbuf := bytes.NewBuffer(buf)
@@ -94,6 +95,8 @@ func sendPlayernames(player *playerData, setName bool) {
 }
 
 func cmd_command(player *playerData, data []byte) {
+	defer reportPanic("cmd_command")
+
 	str := string(data)
 
 	if !strings.HasPrefix(str, "/") {
@@ -128,6 +131,8 @@ func cmd_command(player *playerData, data []byte) {
 }
 
 func cmd_screensize(player *playerData, data []byte) {
+	defer reportPanic("cmd_screensize")
+
 }
 
 func cmd_init(player *playerData, data []byte) {
@@ -158,7 +163,7 @@ func cmd_init(player *playerData, data []byte) {
 const maxChat = 256
 
 func cmd_chat(player *playerData, data []byte) {
-
+	defer reportPanic("cmd_chat")
 	if len(data) > maxChat {
 		return
 	}
@@ -177,7 +182,7 @@ func cmd_chat(player *playerData, data []byte) {
 }
 
 func send_chat(data string) {
-
+	defer reportPanic("send_chat")
 	pListLock.RLock()
 	defer pListLock.RUnlock()
 
@@ -190,7 +195,7 @@ func send_chat(data string) {
 }
 
 func cmd_move(player *playerData, data []byte) {
-
+	defer reportPanic("cmd_move")
 	pListLock.Lock()
 	defer pListLock.Unlock()
 
@@ -241,7 +246,7 @@ func cmd_move(player *playerData, data []byte) {
 }
 
 func writeToPlayer(player *playerData, header CMD, input []byte) bool {
-
+	defer reportPanic("writeToPlayer")
 	if player == nil {
 		return false
 	}

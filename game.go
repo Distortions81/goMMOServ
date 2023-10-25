@@ -15,8 +15,12 @@ import (
 const FrameSpeedNS = 66666666
 
 func processGame() {
+	defer reportPanic("processGame")
+
 	var gameTick uint64
 	go func() {
+
+		defer reportPanic("processGame goroutine")
 
 		var buf, cbuf []byte
 		wg := sizedwaitgroup.New(runtime.NumCPU())
@@ -125,6 +129,8 @@ const chunkDiv = 256
 const numChunks = 3
 
 func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
+	defer reportPanic("addPlayerToWorld")
+
 	if area == nil {
 		return
 	}
@@ -144,6 +150,7 @@ func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 }
 
 func removePlayerWorld(area *areaData, pos XY, player *playerData) {
+	defer reportPanic("removePlayerWorld")
 	if player == nil {
 		return
 	}
@@ -169,6 +176,8 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 }
 
 func movePlayer(area *areaData, pos XY, player *playerData) {
+	defer reportPanic("movePlayer")
+
 	removePlayerWorld(area, player.pos, player)
 	addPlayerToWorld(area, pos, player)
 	player.pos = pos
