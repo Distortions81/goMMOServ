@@ -200,8 +200,6 @@ func send_chat(data string) {
 
 func cmd_move(player *playerData, data []byte) {
 	defer reportPanic("cmd_move")
-	pListLock.Lock()
-	defer pListLock.Unlock()
 
 	inbuf := bytes.NewBuffer(data)
 
