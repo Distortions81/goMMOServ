@@ -5,8 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
-	"sync"
 	"time"
+
+	"github.com/sasha-s/go-deadlock"
 )
 
 var (
@@ -16,7 +17,7 @@ var (
 
 	logBuf      []string
 	logBufLines int
-	logBufLock  sync.Mutex
+	logBufLock  deadlock.Mutex
 )
 
 /*

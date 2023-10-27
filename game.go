@@ -43,15 +43,11 @@ func processGame() {
 
 				}
 
-				/*
-					player.health--
-					if player.health < 1 {
-						player.health = 100
-					}
-				*/
-
 				wg.Add()
 				go func(player *playerData) {
+					player.plock.Lock()
+					defer player.plock.Unlock()
+
 					var numPlayers uint32
 
 					outbuf := bytes.NewBuffer(buf)
@@ -66,6 +62,7 @@ func processGame() {
 								continue
 							}
 
+							chunk.chunklock.Lock()
 							for _, target := range chunk.players {
 								if player.conn == nil {
 									continue
@@ -78,6 +75,7 @@ func processGame() {
 							}
 							numPlayers += uint32(len(chunk.players))
 							outsize.Add(uint32(len(chunk.players)) * 104)
+							chunk.chunklock.Unlock()
 						}
 					}
 
@@ -138,15 +136,20 @@ func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 
 	/* Create chunk if needed */
 	chunk := area.chunks[chunkPos]
+
 	if chunk == nil {
+		area.arealock.Lock()
 		area.chunks[chunkPos] = &chunkData{}
+		area.arealock.Unlock()
 		doLog(true, "Created chunk: %v,%v", chunkPos.X, chunkPos.Y)
 	}
 
-	/* Create entry */
+	/* Add player */
+	area.chunks[chunkPos].chunklock.Lock()
 	area.chunks[chunkPos].players =
 		append(area.chunks[chunkPos].players,
 			player)
+	area.chunks[chunkPos].chunklock.Unlock()
 }
 
 func removePlayerWorld(area *areaData, pos XY, player *playerData) {
@@ -160,7 +163,9 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 
 	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
+	area.chunks[chunkPos].chunklock.Lock()
 	chunkPlayers := area.chunks[chunkPos].players
+
 	var deleteme int = -1
 	var numPlayers = len(chunkPlayers) - 1
 	for t, target := range chunkPlayers {
@@ -169,10 +174,11 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 			break
 		}
 	}
+	//Fast, non-order-preserving delete item
 	area.chunks[chunkPos].players[deleteme] =
 		area.chunks[chunkPos].players[numPlayers]
-
 	area.chunks[chunkPos].players = chunkPlayers[:numPlayers]
+	area.chunks[chunkPos].chunklock.Unlock()
 }
 
 func movePlayer(area *areaData, pos XY, player *playerData) {
@@ -181,4 +187,5 @@ func movePlayer(area *areaData, pos XY, player *playerData) {
 	removePlayerWorld(area, player.pos, player)
 	addPlayerToWorld(area, pos, player)
 	player.pos = pos
+
 }

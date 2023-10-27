@@ -5,7 +5,8 @@ import (
 	"compress/zlib"
 	"io"
 	"math"
-	"sync"
+
+	"github.com/sasha-s/go-deadlock"
 )
 
 func distance(a, b XY) float64 {
@@ -53,10 +54,10 @@ func CompressZip(data []byte) []byte {
 }
 
 var playerTopID uint32
-var playerIDLock sync.Mutex
+var playerIDLock deadlock.Mutex
 
 var objectTopID uint64
-var objectIDLock sync.Mutex
+var objectIDLock deadlock.Mutex
 
 func makePlayerID() uint32 {
 	defer reportPanic("makePlayerID")

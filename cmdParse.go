@@ -46,6 +46,7 @@ func newParser(input []byte, player *playerData) {
 	}
 }
 
+/* This should use a cached list */
 func sendPlayernames(player *playerData, setName bool) {
 	defer reportPanic("sendPlayernames")
 
@@ -128,7 +129,9 @@ func cmd_command(player *playerData, data []byte) {
 			writeToPlayer(player, CMD_COMMAND, []byte("Name too long."))
 			return
 		}
+		player.plock.Lock()
 		player.name = allParams
+		player.plock.Unlock()
 		writeToPlayer(player, CMD_COMMAND, []byte("Name set."))
 		sendPlayernames(player, true)
 	}
@@ -210,10 +213,14 @@ func cmd_move(player *playerData, data []byte) {
 	var newPos XY = XY{X: uint32(int(player.pos.X) + int(newPosX)),
 		Y: uint32(int(player.pos.Y) + int(newPosY))}
 
+	player.plock.Lock()
+	defer player.plock.Unlock()
+
 	for x := -2; x < 2; x++ {
 		for y := -2; y < 2; y++ {
 			chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
 				Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+
 			chunk := player.area.chunks[chunkPos]
 			if chunk == nil {
 				continue

@@ -5,9 +5,9 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
-	"sync"
 
 	"github.com/gorilla/websocket"
+	"github.com/sasha-s/go-deadlock"
 )
 
 var upgrader = websocket.Upgrader{EnableCompression: false}
@@ -31,10 +31,10 @@ func siteHandler(w http.ResponseWriter, r *http.Request) {
 
 var (
 	numConnections     int = 0
-	numConnectionsLock sync.Mutex
+	numConnectionsLock deadlock.Mutex
 
 	playerList map[uint32]*playerData
-	pListLock  sync.RWMutex
+	pListLock  deadlock.RWMutex
 
 	maxNetRead     = 1024 * 100
 	maxConnections = 1000
