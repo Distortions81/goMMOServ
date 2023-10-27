@@ -53,12 +53,16 @@ func sendPlayernames(player *playerData, setName bool) {
 	outbuf := bytes.NewBuffer(buf)
 
 	var numNames uint32
+	pListLock.RLock()
+	defer pListLock.RUnlock()
+
 	for _, player := range playerList {
 		if player.name == "" {
 			continue
 		}
 		numNames++
 	}
+
 	if numNames == 0 {
 		return
 	}
