@@ -33,8 +33,8 @@ var (
 	numConnections     int = 0
 	numConnectionsLock deadlock.Mutex
 
-	playerList map[uint32]*playerData
-	pListLock  deadlock.RWMutex
+	playerList     map[uint32]*playerData
+	playerListLock deadlock.RWMutex
 
 	maxNetRead     = 1024 * 100
 	maxConnections = 1000
@@ -53,10 +53,10 @@ func handleConnection(conn *websocket.Conn) {
 
 	startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(128)), Y: uint32(int(xyHalf) + rand.Intn(128))}
 	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc, area: &testArea, health: 100}
-	pListLock.Lock()
+	playerListLock.Lock()
 	playerList[player.id] = player
 	addPlayerToWorld(&testArea, startLoc, player)
-	pListLock.Unlock()
+	playerListLock.Unlock()
 
 	conn.SetReadLimit(int64(maxNetRead))
 
@@ -82,10 +82,10 @@ func removePlayer(player *playerData, reason string) {
 	playerID := player.id
 	killConnection(player, true)
 
-	pListLock.Lock()
+	playerListLock.Lock()
 	removePlayerWorld(player.area, player.pos, player)
 	delete(playerList, player.id)
-	pListLock.Unlock()
+	playerListLock.Unlock()
 
 	reasonStr := fmt.Sprintf("Player-%v left the game. (%v)", playerID, reason)
 	send_chat(reasonStr)

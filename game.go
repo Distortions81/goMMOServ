@@ -26,25 +26,29 @@ func processGame() {
 		defer reportPanic("processGame goroutine")
 
 		var buf, cbuf []byte
+		//sized wait group, number of available threads
 		wg := sizedwaitgroup.New(runtime.NumCPU())
 
+		//Loop forever
 		for {
 			gameTick++
 			loopStart := time.Now()
 
-			pListLock.RLock()
-
+			//Lock playerlist, read
+			playerListLock.RLock()
 			var outsize atomic.Uint32
+
 			/* TODO split into list-sections for less overhead */
 			for _, player := range playerList {
 
+				//Saninity check
 				if player.conn == nil {
 					continue
-
 				}
 
 				wg.Add()
 				go func(player *playerData) {
+					//Lock player
 					player.plock.Lock()
 					defer player.plock.Unlock()
 
@@ -53,6 +57,7 @@ func processGame() {
 					outbuf := bytes.NewBuffer(buf)
 					countbuf := bytes.NewBuffer(cbuf)
 
+					//Search surrounding chunks
 					for x := -numChunks; x < numChunks; x++ {
 						for y := -numChunks; y < numChunks; y++ {
 							chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
@@ -62,24 +67,36 @@ func processGame() {
 								continue
 							}
 
+							//Lock chunk
 							chunk.chunklock.Lock()
 							for _, target := range chunk.players {
+								//Sanity check
 								if player.conn == nil {
 									continue
 								}
+								//Serialize data
 								binary.Write(outbuf, binary.LittleEndian, &target.id)
 								binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
 								binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
+
 								//Eventually move me to an event
 								binary.Write(outbuf, binary.LittleEndian, &target.health)
 							}
+							//Tally players, needed for header
 							numPlayers += uint32(len(chunk.players))
+
+							//Tally output
 							outsize.Add(uint32(len(chunk.players)) * 104)
+
+							//Unlock chunk
 							chunk.chunklock.Unlock()
 						}
 					}
 
+					//Write header
 					binary.Write(countbuf, binary.LittleEndian, &numPlayers)
+
+					//Write the whole thing
 					writeToPlayer(player, CMD_UPDATE, append(countbuf.Bytes(), outbuf.Bytes()...))
 
 					wg.Done()
@@ -88,40 +105,47 @@ func processGame() {
 			}
 			wg.Wait()
 
-			pListLock.RUnlock()
+			//Unlock player list
+			playerListLock.RUnlock()
 
+			//Calculate remaining frame time
 			took := time.Since(loopStart)
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
 
+			//Show bandwidth use
 			if gTestMode && gameTick%450 == 0 {
 				fmt.Printf("Out: %vkbit\n", outsize.Load()*15/1024)
 			}
 
-			if remaining > 0 { /*Kill remaining time*/
+			//Sleep if there is remaining frame time
+			if remaining > 0 {
 				time.Sleep(remaining)
 
 				if gTestMode {
+					//Log frame time
 					if gameTick%450 == 0 {
 						fmt.Printf("took: %v\n", took.Round(time.Millisecond))
 					}
 				}
 
-			} else { /*We are lagging behind realtime*/
+			} else {
+				/*Log we are slower than real-time*/
 				doLog(true, "Unable to keep up: took: %v", took.Round(time.Millisecond))
 			}
 
 		}
 	}()
 
+	/* Spawn players for test mode */
 	if gTestMode {
 		for i := 0; i < 5000; i++ {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(20000)),
 				Y: uint32(int(xyHalf) + rand.Intn(20000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, health: 100}
-			pListLock.Lock()
+			playerListLock.Lock()
 			playerList[player.id] = player
 			addPlayerToWorld(player.area, startLoc, player)
-			pListLock.Unlock()
+			playerListLock.Unlock()
 		}
 	}
 }
@@ -129,14 +153,17 @@ func processGame() {
 func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 	defer reportPanic("addPlayerToWorld")
 
+	//Sanity check
 	if area == nil {
 		return
 	}
+	//Calulate chunk pos
 	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
-	/* Create chunk if needed */
+	//Get chunk
 	chunk := area.chunks[chunkPos]
 
+	//Create chunk if needed
 	if chunk == nil {
 		area.arealock.Lock()
 		area.chunks[chunkPos] = &chunkData{}
@@ -154,18 +181,21 @@ func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 
 func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 	defer reportPanic("removePlayerWorld")
-	if player == nil {
-		return
-	}
-	if area == nil {
+
+	//Sanity check
+	if player == nil || area == nil {
 		return
 	}
 
+	//Calc chunk pos
 	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
+	//Lock chunk
 	area.chunks[chunkPos].chunklock.Lock()
+	//Get players in chunk
 	chunkPlayers := area.chunks[chunkPos].players
 
+	//Find player
 	var deleteme int = -1
 	var numPlayers = len(chunkPlayers) - 1
 	for t, target := range chunkPlayers {
@@ -174,18 +204,27 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 			break
 		}
 	}
-	//Fast, non-order-preserving delete item
-	area.chunks[chunkPos].players[deleteme] =
-		area.chunks[chunkPos].players[numPlayers]
-	area.chunks[chunkPos].players = chunkPlayers[:numPlayers]
+
+	//Sanity check
+	if deleteme >= 0 {
+		//Fast, non-order-preserving delete player from chunk
+		area.chunks[chunkPos].players[deleteme] =
+			area.chunks[chunkPos].players[numPlayers]
+		area.chunks[chunkPos].players = chunkPlayers[:numPlayers]
+	}
+	//Unlock chunk
 	area.chunks[chunkPos].chunklock.Unlock()
 }
 
 func movePlayer(area *areaData, pos XY, player *playerData) {
 	defer reportPanic("movePlayer")
 
+	//Remove player from old chunk
 	removePlayerWorld(area, player.pos, player)
-	addPlayerToWorld(area, pos, player)
-	player.pos = pos
 
+	//Add player to new chunk
+	addPlayerToWorld(area, pos, player)
+
+	//Update player position
+	player.pos = pos
 }
