@@ -18,7 +18,7 @@ func main() {
 	defer time.Sleep(time.Second)
 
 	/* make test area */
-	testArea = areaData{chunks: make(map[XY]*chunkData)}
+	testArea = areaData{id: 0, chunks: make(map[XY]*chunkData)}
 
 	playerList = make(map[uint32]*playerData)
 
