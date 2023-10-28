@@ -41,11 +41,39 @@ func newParser(input []byte, player *playerData) {
 		cmd_command(player, data)
 	case CMD_EDITPLACEITEM:
 		cmd_editPlaceItem(player, data)
+	case CMD_GETCHUNK:
+		cmd_getchunk(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		removePlayer(player, "INVALID COMMAND")
 
 		return
+	}
+}
+
+func cmd_getchunk(player *playerData, data []byte) {
+	defer reportPanic("cmd_getchunk")
+
+	var posx, posy uint32
+
+	inbuf := bytes.NewBuffer(data)
+	binary.Read(inbuf, binary.LittleEndian, &posx)
+	binary.Read(inbuf, binary.LittleEndian, &posy)
+
+	chunkPos := XY{X: uint32(int(posx)),
+		Y: uint32(int(posy))}
+	chunk := testArea.chunks[chunkPos]
+
+	var buf []byte
+	outbuf := bytes.NewBuffer(buf)
+
+	numObj := uint16(len(chunk.worldObjects))
+	binary.Write(outbuf, binary.LittleEndian, &numObj)
+
+	for _, item := range chunk.worldObjects {
+		binary.Write(outbuf, binary.LittleEndian, &item.itemId)
+		binary.Write(outbuf, binary.LittleEndian, &item.pos.X)
+		binary.Write(outbuf, binary.LittleEndian, &item.pos.Y)
 	}
 }
 
