@@ -40,6 +40,7 @@ type XYs struct {
 }
 
 type areaData struct {
+	id       uint16
 	arealock deadlock.RWMutex
 	chunks   map[XY]*chunkData
 }
