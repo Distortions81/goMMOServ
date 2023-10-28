@@ -236,6 +236,7 @@ func cmd_init(player *playerData, data []byte) {
 
 	//Send player id
 	binary.Write(outbuf, binary.LittleEndian, &player.id)
+	binary.Write(outbuf, binary.LittleEndian, testArea.id)
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 
 	//Use move command to init
