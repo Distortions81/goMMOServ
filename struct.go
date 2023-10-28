@@ -5,6 +5,12 @@ import (
 	"github.com/sasha-s/go-deadlock"
 )
 
+type worldObject struct {
+	itemId uint32
+	pos    XY
+	uid    uint32
+}
+
 type playerData struct {
 	conn     *websocket.Conn
 	connLock deadlock.Mutex
@@ -39,14 +45,7 @@ type areaData struct {
 }
 
 type chunkData struct {
-	objects   []*objectData
-	players   []*playerData
-	chunklock deadlock.RWMutex
-}
-
-type objectData struct {
-	name string
-	uid  uint64
-
-	pos XY
+	worldObjects []*worldObject
+	players      []*playerData
+	chunkLock    deadlock.RWMutex
 }

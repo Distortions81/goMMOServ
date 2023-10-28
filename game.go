@@ -68,7 +68,7 @@ func processGame() {
 							}
 
 							//Lock chunk
-							chunk.chunklock.Lock()
+							chunk.chunkLock.Lock()
 							for _, target := range chunk.players {
 								//Sanity check
 								if player.conn == nil {
@@ -89,7 +89,7 @@ func processGame() {
 							outsize.Add(uint32(len(chunk.players)) * 104)
 
 							//Unlock chunk
-							chunk.chunklock.Unlock()
+							chunk.chunkLock.Unlock()
 						}
 					}
 
@@ -172,11 +172,11 @@ func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 	}
 
 	/* Add player */
-	area.chunks[chunkPos].chunklock.Lock()
+	area.chunks[chunkPos].chunkLock.Lock()
 	area.chunks[chunkPos].players =
 		append(area.chunks[chunkPos].players,
 			player)
-	area.chunks[chunkPos].chunklock.Unlock()
+	area.chunks[chunkPos].chunkLock.Unlock()
 }
 
 func removePlayerWorld(area *areaData, pos XY, player *playerData) {
@@ -191,7 +191,7 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
 	//Lock chunk
-	area.chunks[chunkPos].chunklock.Lock()
+	area.chunks[chunkPos].chunkLock.Lock()
 	//Get players in chunk
 	chunkPlayers := area.chunks[chunkPos].players
 
@@ -213,7 +213,7 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 		area.chunks[chunkPos].players = chunkPlayers[:numPlayers]
 	}
 	//Unlock chunk
-	area.chunks[chunkPos].chunklock.Unlock()
+	area.chunks[chunkPos].chunkLock.Unlock()
 }
 
 func movePlayer(area *areaData, pos XY, player *playerData) {
@@ -227,4 +227,81 @@ func movePlayer(area *areaData, pos XY, player *playerData) {
 
 	//Update player position
 	player.pos = pos
+}
+
+func addWorldObject(area *areaData, pos XY, wObject *worldObject) {
+	defer reportPanic("addWorldObject")
+
+	//Sanity check
+	if area == nil {
+		return
+	}
+	//Calulate chunk pos
+	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
+
+	//Get chunk
+	chunk := area.chunks[chunkPos]
+
+	//Create chunk if needed
+	if chunk == nil {
+		area.arealock.Lock()
+		area.chunks[chunkPos] = &chunkData{}
+		area.arealock.Unlock()
+		doLog(true, "Created chunk: %v,%v", chunkPos.X, chunkPos.Y)
+	}
+
+	/* Add player */
+	area.chunks[chunkPos].chunkLock.Lock()
+	area.chunks[chunkPos].worldObjects = append(area.chunks[chunkPos].worldObjects, wObject)
+	area.chunks[chunkPos].chunkLock.Unlock()
+}
+
+func removeWorldObject(area *areaData, pos XY, wObject *worldObject) {
+	defer reportPanic("removePlayerWorld")
+
+	//Sanity check
+	if wObject == nil || area == nil {
+		return
+	}
+
+	//Calc chunk pos
+	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
+
+	//Lock chunk
+	area.chunks[chunkPos].chunkLock.Lock()
+	//Get players in chunk
+	chunkObjects := area.chunks[chunkPos].worldObjects
+
+	//Find player
+	var deleteme int = -1
+	var numObjs = len(chunkObjects) - 1
+	for t, target := range chunkObjects {
+		if target.uid == wObject.uid {
+			deleteme = t
+			break
+		}
+	}
+
+	//Sanity check
+	if deleteme >= 0 {
+		//Fast, non-order-preserving delete player from chunk
+		area.chunks[chunkPos].worldObjects[deleteme] =
+			area.chunks[chunkPos].worldObjects[numObjs]
+		area.chunks[chunkPos].worldObjects = chunkObjects[:numObjs]
+	}
+	//Unlock chunk
+	area.chunks[chunkPos].chunkLock.Unlock()
+}
+
+func moveWorldObject(area *areaData, pos XY, wObject *worldObject) {
+	defer reportPanic("movePlayer")
+
+	//Remove player from old chunk
+	removeWorldObject(area, wObject.pos, wObject)
+
+	//Add player to new chunk
+	addWorldObject(area, pos, wObject)
+
+	//Update player position
+	wObject.pos = pos
 }

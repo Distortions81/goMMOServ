@@ -63,7 +63,11 @@ func cmd_editPlaceItem(player *playerData, data []byte) {
 	binary.Read(inbuf, binary.LittleEndian, &editPosX)
 	binary.Read(inbuf, binary.LittleEndian, &editPosY)
 
+	pos := XY{X: editPosX, Y: editPosY}
+	newObj := &worldObject{uid: uint32(makeObjectID()), pos: pos, itemId: editID}
+
 	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
+	addWorldObject(&testArea, pos, newObj)
 }
 
 /* This should use a cached list */

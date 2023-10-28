@@ -69,7 +69,7 @@ func makePlayerID() uint32 {
 	return playerTopID
 }
 
-func makObjectID() uint64 {
+func makeObjectID() uint64 {
 	defer reportPanic("makObjectID")
 
 	objectIDLock.Lock()
