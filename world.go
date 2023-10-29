@@ -64,6 +64,7 @@ func saveWorld() {
 }
 
 func loadWorld() {
+	doLog(true, "Loading areas...")
 	items, err := os.ReadDir(dataDir + "/" + areaDir)
 	if err != nil {
 		doLog(true, "Unable to read data dir.")
