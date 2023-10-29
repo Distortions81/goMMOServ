@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"strings"
 )
@@ -53,7 +52,7 @@ func saveWorld() {
 			return
 		}
 
-		err = ioutil.WriteFile(fileName, outbuf.Bytes(), 0644)
+		err = os.WriteFile(fileName, outbuf.Bytes(), 0644)
 
 		if err != nil {
 			doLog(true, "WriteSector: WriteFile %v", err.Error())
