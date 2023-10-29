@@ -12,7 +12,7 @@ import (
 	"github.com/remeh/sizedwaitgroup"
 )
 
-const FrameSpeedNS = 66666666
+const FrameSpeedNS = 33333333
 
 const chunkDiv = 128
 const numChunks = 5
