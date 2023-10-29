@@ -70,12 +70,15 @@ func loadWorld() {
 		return
 	}
 
+	fileFound := 0
 	for _, item := range items {
 		var sdat saveData
 
 		if item.IsDir() {
 			continue
 		}
+		fileFound++
+
 		fileName := item.Name()
 		areaName := strings.TrimSuffix(fileName, suffix)
 
@@ -121,7 +124,7 @@ func loadWorld() {
 			numObj++
 		}
 
-		doLog(true, "Loaded %v objects.", numObj)
+		doLog(true, "Loaded %v objects, %v files in dir.", numObj, fileFound)
 
 		areaList[newArea.ID] = newArea
 	}
