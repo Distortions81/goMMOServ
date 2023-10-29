@@ -25,7 +25,7 @@ func processGame() {
 
 		defer reportPanic("processGame goroutine")
 
-		var buf, cbuf []byte
+		var pbuf, cbuf, obuf, ocbuf []byte
 		//sized wait group, number of available threads
 		wg := sizedwaitgroup.New(runtime.NumCPU())
 
@@ -38,7 +38,6 @@ func processGame() {
 			playerListLock.RLock()
 			var outsize atomic.Uint32
 
-			/* TODO split into list-sections for less overhead */
 			for _, player := range playerList {
 
 				//Saninity check
@@ -52,10 +51,14 @@ func processGame() {
 					player.plock.Lock()
 					defer player.plock.Unlock()
 
-					var numPlayers uint32
+					var numPlayers uint16
+					var numObj uint16
 
-					outbuf := bytes.NewBuffer(buf)
 					countbuf := bytes.NewBuffer(cbuf)
+					playerBuf := bytes.NewBuffer(pbuf)
+
+					objCountBuf := bytes.NewBuffer((ocbuf))
+					objBuf := bytes.NewBuffer(obuf)
 
 					//Search surrounding chunks
 					for x := -numChunks; x < numChunks; x++ {
@@ -70,23 +73,34 @@ func processGame() {
 							//Lock chunk
 							chunk.chunkLock.Lock()
 							for _, target := range chunk.players {
-								//Sanity check
-								if player.conn == nil {
-									continue
-								}
+
 								//Serialize data
-								binary.Write(outbuf, binary.LittleEndian, &target.id)
-								binary.Write(outbuf, binary.LittleEndian, &target.pos.X)
-								binary.Write(outbuf, binary.LittleEndian, &target.pos.Y)
+								binary.Write(playerBuf, binary.LittleEndian, &target.id)
+								binary.Write(playerBuf, binary.LittleEndian, &target.pos.X)
+								binary.Write(playerBuf, binary.LittleEndian, &target.pos.Y)
 
 								//Eventually move me to an event
-								binary.Write(outbuf, binary.LittleEndian, &target.health)
+								binary.Write(playerBuf, binary.LittleEndian, &target.health)
+
+								numPlayers++
 							}
 							//Tally players, needed for header
-							numPlayers += uint32(len(chunk.players))
 
 							//Tally output
-							outsize.Add(uint32(len(chunk.players)) * 104)
+							outsize.Add(uint32(numPlayers) * 104)
+
+							//Write world objects
+
+							for _, obj := range chunk.worldObjects {
+								binary.Write(objBuf, binary.LittleEndian, &obj.itemId)
+								binary.Write(objBuf, binary.LittleEndian, &obj.pos.X)
+								binary.Write(objBuf, binary.LittleEndian, &obj.pos.Y)
+
+								numObj++
+							}
+
+							// Tally output
+							outsize.Add(uint32(numObj) * 96)
 
 							//Unlock chunk
 							chunk.chunkLock.Unlock()
@@ -95,9 +109,15 @@ func processGame() {
 
 					//Write header
 					binary.Write(countbuf, binary.LittleEndian, &numPlayers)
+					outsize.Add(16)
+					binary.Write(objCountBuf, binary.LittleEndian, &numObj)
+					outsize.Add(16)
 
 					//Write the whole thing
-					writeToPlayer(player, CMD_UPDATE, append(countbuf.Bytes(), outbuf.Bytes()...))
+					playerOut := append(countbuf.Bytes(), playerBuf.Bytes()...)
+					objOut := append(objCountBuf.Bytes(), objBuf.Bytes()...)
+
+					writeToPlayer(player, CMD_UPDATE, append(playerOut, objOut...))
 
 					wg.Done()
 				}(player)

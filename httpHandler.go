@@ -36,7 +36,7 @@ var (
 	playerList     map[uint32]*playerData
 	playerListLock deadlock.RWMutex
 
-	maxNetRead     = 1024 * 100
+	maxNetRead     = 1024 * 1000
 	maxConnections = 1000
 )
 
