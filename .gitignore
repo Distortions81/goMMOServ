@@ -5,3 +5,4 @@ goMMOServ
 panic.log
 heapDump.dat
 www/main.wasm.gz
+data/*.json

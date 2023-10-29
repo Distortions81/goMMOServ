@@ -9,6 +9,7 @@ import (
 
 var (
 	fileServer http.Handler
+	areaList   []*areaData
 	testArea   areaData
 	gTestMode  bool
 )
@@ -18,7 +19,8 @@ func main() {
 	defer time.Sleep(time.Second)
 
 	/* make test area */
-	testArea = areaData{id: 0, chunks: make(map[XY]*chunkData)}
+	testArea = areaData{Name: "test", ID: 0, Chunks: make(map[XY]*chunkData)}
+	areaList = append(areaList, &testArea)
 
 	playerList = make(map[uint32]*playerData)
 

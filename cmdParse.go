@@ -62,18 +62,18 @@ func cmd_getchunk(player *playerData, data []byte) {
 
 	chunkPos := XY{X: uint32(int(posx)),
 		Y: uint32(int(posy))}
-	chunk := testArea.chunks[chunkPos]
+	chunk := testArea.Chunks[chunkPos]
 
 	var buf []byte
 	outbuf := bytes.NewBuffer(buf)
 
-	numObj := uint16(len(chunk.worldObjects))
+	numObj := uint16(len(chunk.WorldObjects))
 	binary.Write(outbuf, binary.LittleEndian, &numObj)
 
-	for _, item := range chunk.worldObjects {
-		binary.Write(outbuf, binary.LittleEndian, &item.itemId)
-		binary.Write(outbuf, binary.LittleEndian, &item.pos.X)
-		binary.Write(outbuf, binary.LittleEndian, &item.pos.Y)
+	for _, item := range chunk.WorldObjects {
+		binary.Write(outbuf, binary.LittleEndian, &item.ItemId)
+		binary.Write(outbuf, binary.LittleEndian, &item.Pos.X)
+		binary.Write(outbuf, binary.LittleEndian, &item.Pos.Y)
 	}
 }
 
@@ -92,10 +92,11 @@ func cmd_editPlaceItem(player *playerData, data []byte) {
 	binary.Read(inbuf, binary.LittleEndian, &editPosY)
 
 	pos := XY{X: editPosX, Y: editPosY}
-	newObj := &worldObject{uid: uint32(makeObjectID()), pos: pos, itemId: editID}
+	newObj := &worldObject{uid: uint32(makeObjectID()), Pos: pos, ItemId: editID}
 
 	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
 	addWorldObject(&testArea, pos, newObj)
+	saveWorld()
 }
 
 /* This should use a cached list */
@@ -236,7 +237,7 @@ func cmd_init(player *playerData, data []byte) {
 
 	//Send player id
 	binary.Write(outbuf, binary.LittleEndian, &player.id)
-	binary.Write(outbuf, binary.LittleEndian, testArea.id)
+	binary.Write(outbuf, binary.LittleEndian, testArea.ID)
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 
 	//Use move command to init
@@ -317,7 +318,7 @@ func cmd_move(player *playerData, data []byte) {
 			//Get chunk
 			chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
 				Y: uint32(int(player.pos.Y/chunkDiv) + y)}
-			chunk := player.area.chunks[chunkPos]
+			chunk := player.area.Chunks[chunkPos]
 			if chunk == nil {
 				continue
 			}

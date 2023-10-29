@@ -6,8 +6,8 @@ import (
 )
 
 type worldObject struct {
-	itemId uint32
-	pos    XY
+	ItemId uint32
+	Pos    XY
 	uid    uint32
 }
 
@@ -40,13 +40,17 @@ type XYs struct {
 }
 
 type areaData struct {
-	id       uint16
+	Version uint16
+
+	Name     string
+	ID       uint16
 	arealock deadlock.RWMutex
-	chunks   map[XY]*chunkData
+	Chunks   map[XY]*chunkData
+	dirty    bool
 }
 
 type chunkData struct {
-	worldObjects []*worldObject
+	WorldObjects []*worldObject
 	players      []*playerData
 	chunkLock    deadlock.RWMutex
 }
