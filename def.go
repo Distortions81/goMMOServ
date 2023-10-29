@@ -1,6 +1,6 @@
 package main
 
-var protoVersion uint16 = 4
+var protoVersion uint16 = 5
 
 /* Directions */
 type DIR uint8
@@ -28,11 +28,9 @@ const (
 	CMD_MOVE
 	CMD_UPDATE
 	CMD_CHAT
-	CMD_SCREENSIZE
 	CMD_COMMAND
 	CMD_PLAYERNAMES
 	CMD_EDITPLACEITEM
-	CMD_GETCHUNK
 )
 
 /* Used for debug messages, this could be better */
@@ -46,11 +44,9 @@ func init() {
 	cmdNames[CMD_MOVE] = "CMD_MOVE"
 	cmdNames[CMD_UPDATE] = "CMD_UPDATE"
 	cmdNames[CMD_CHAT] = "CMD_CHAT"
-	cmdNames[CMD_SCREENSIZE] = "CMD_SCREENSIZE"
 	cmdNames[CMD_COMMAND] = "CMD_COMMAND"
 	cmdNames[CMD_PLAYERNAMES] = "CMD_PLAYERNAMES"
 	cmdNames[CMD_EDITPLACEITEM] = "CMD_EDITPLACEITEM"
-	cmdNames[CMD_GETCHUNK] = "CMD_GETCHUNK"
 }
 
 const xyHalf = 2147483648

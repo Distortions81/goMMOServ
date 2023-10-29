@@ -1,8 +1,9 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/gorilla/websocket"
-	"github.com/sasha-s/go-deadlock"
 )
 
 type worldObject struct {
@@ -13,7 +14,7 @@ type worldObject struct {
 
 type playerData struct {
 	conn     *websocket.Conn
-	connLock deadlock.Mutex
+	connLock sync.Mutex
 
 	name   string
 	health int8
@@ -21,7 +22,7 @@ type playerData struct {
 	id    uint32
 	pos   XY
 	area  *areaData
-	plock deadlock.RWMutex
+	plock sync.RWMutex
 }
 
 type XY struct {
@@ -44,7 +45,7 @@ type areaData struct {
 
 	Name     string
 	ID       uint16
-	arealock deadlock.RWMutex
+	arealock sync.RWMutex
 	Chunks   map[XY]*chunkData
 	dirty    bool
 }
@@ -52,5 +53,5 @@ type areaData struct {
 type chunkData struct {
 	WorldObjects []*worldObject
 	players      []*playerData
-	chunkLock    deadlock.RWMutex
+	chunkLock    sync.RWMutex
 }

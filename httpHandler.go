@@ -5,9 +5,9 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/sasha-s/go-deadlock"
 )
 
 var upgrader = websocket.Upgrader{EnableCompression: false}
@@ -31,10 +31,10 @@ func siteHandler(w http.ResponseWriter, r *http.Request) {
 
 var (
 	numConnections     int = 0
-	numConnectionsLock deadlock.Mutex
+	numConnectionsLock sync.Mutex
 
 	playerList     map[uint32]*playerData
-	playerListLock deadlock.RWMutex
+	playerListLock sync.RWMutex
 
 	maxNetRead     = 1024 * 1000
 	maxConnections = 1000
@@ -52,10 +52,10 @@ func handleConnection(conn *websocket.Conn) {
 	}
 
 	startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(128)), Y: uint32(int(xyHalf) + rand.Intn(128))}
-	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc, area: &testArea, health: 100}
+	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
 	playerListLock.Lock()
 	playerList[player.id] = player
-	addPlayerToWorld(&testArea, startLoc, player)
+	addPlayerToWorld(player.area, startLoc, player)
 	playerListLock.Unlock()
 
 	conn.SetReadLimit(int64(maxNetRead))

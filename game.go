@@ -161,7 +161,7 @@ func processGame() {
 		for i := 0; i < 5000; i++ {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(20000)),
 				Y: uint32(int(xyHalf) + rand.Intn(20000))}
-			player := &playerData{id: makePlayerID(), pos: startLoc, area: &testArea, health: 100}
+			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
 			playerListLock.Lock()
 			playerList[player.id] = player
 			addPlayerToWorld(player.area, startLoc, player)
@@ -270,7 +270,7 @@ func addWorldObject(area *areaData, pos XY, wObject *worldObject) {
 		doLog(true, "Created chunk: %v,%v", chunkPos.X, chunkPos.Y)
 	}
 
-	/* Add player */
+	/* Add object */
 	area.Chunks[chunkPos].chunkLock.Lock()
 	area.Chunks[chunkPos].WorldObjects = append(area.Chunks[chunkPos].WorldObjects, wObject)
 	area.Chunks[chunkPos].chunkLock.Unlock()

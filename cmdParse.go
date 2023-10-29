@@ -5,9 +5,9 @@ import (
 	"encoding/binary"
 	"fmt"
 	"strings"
+	"sync"
 
 	"github.com/gorilla/websocket"
-	"github.com/sasha-s/go-deadlock"
 )
 
 func newParser(input []byte, player *playerData) {
@@ -35,45 +35,15 @@ func newParser(input []byte, player *playerData) {
 		cmd_move(player, data)
 	case CMD_CHAT: /*CHAT*/
 		cmd_chat(player, data)
-	case CMD_SCREENSIZE: /* Vision */
-		cmd_screensize(player, data)
 	case CMD_COMMAND:
 		cmd_command(player, data)
 	case CMD_EDITPLACEITEM:
 		cmd_editPlaceItem(player, data)
-	case CMD_GETCHUNK:
-		cmd_getchunk(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		removePlayer(player, "INVALID COMMAND")
 
 		return
-	}
-}
-
-func cmd_getchunk(player *playerData, data []byte) {
-	defer reportPanic("cmd_getchunk")
-
-	var posx, posy uint32
-
-	inbuf := bytes.NewBuffer(data)
-	binary.Read(inbuf, binary.LittleEndian, &posx)
-	binary.Read(inbuf, binary.LittleEndian, &posy)
-
-	chunkPos := XY{X: uint32(int(posx)),
-		Y: uint32(int(posy))}
-	chunk := testArea.Chunks[chunkPos]
-
-	var buf []byte
-	outbuf := bytes.NewBuffer(buf)
-
-	numObj := uint16(len(chunk.WorldObjects))
-	binary.Write(outbuf, binary.LittleEndian, &numObj)
-
-	for _, item := range chunk.WorldObjects {
-		binary.Write(outbuf, binary.LittleEndian, &item.ItemId)
-		binary.Write(outbuf, binary.LittleEndian, &item.Pos.X)
-		binary.Write(outbuf, binary.LittleEndian, &item.Pos.Y)
 	}
 }
 
@@ -95,7 +65,7 @@ func cmd_editPlaceItem(player *playerData, data []byte) {
 	newObj := &worldObject{uid: uint32(makeObjectID()), Pos: pos, ItemId: editID}
 
 	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
-	addWorldObject(&testArea, pos, newObj)
+	addWorldObject(areaList[0], pos, newObj)
 	saveWorld()
 }
 
@@ -213,11 +183,6 @@ func cmd_command(player *playerData, data []byte) {
 	}
 }
 
-func cmd_screensize(player *playerData, data []byte) {
-	defer reportPanic("cmd_screensize")
-
-}
-
 func cmd_init(player *playerData, data []byte) {
 	defer reportPanic("cmd_init")
 
@@ -237,7 +202,7 @@ func cmd_init(player *playerData, data []byte) {
 
 	//Send player id
 	binary.Write(outbuf, binary.LittleEndian, &player.id)
-	binary.Write(outbuf, binary.LittleEndian, testArea.ID)
+	binary.Write(outbuf, binary.LittleEndian, player.area.ID)
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 
 	//Use move command to init
@@ -288,7 +253,7 @@ func send_chat(data string) {
 	}
 }
 
-var moveLock deadlock.Mutex
+var moveLock sync.Mutex
 
 func cmd_move(player *playerData, data []byte) {
 	defer reportPanic("cmd_move")
