@@ -17,14 +17,6 @@ func main() {
 	defer reportPanic("main")
 	defer time.Sleep(time.Second)
 
-	/* make test area */
-	tmp := &areaData{Name: "test", ID: 0, Chunks: make(map[XY]*chunkData)}
-	areaList = make(map[uint16]*areaData)
-	areaList[tmp.ID] = tmp
-	loadWorld()
-
-	playerList = make(map[uint32]*playerData)
-
 	//Parse launch params
 	devMode := flag.Bool("dev", false, "dev mode enable")
 	bindIP := flag.String("ip", "", "IP to bind to")
@@ -37,6 +29,14 @@ func main() {
 	//Start logger
 	startLog()
 	logDaemon()
+
+	/* make test area */
+	tmp := &areaData{Name: "test", ID: 0, Chunks: make(map[XY]*chunkData)}
+	areaList = make(map[uint16]*areaData)
+	areaList[tmp.ID] = tmp
+	loadWorld()
+
+	playerList = make(map[uint32]*playerData)
 
 	processGame()
 
