@@ -46,7 +46,7 @@ func saveWorld() {
 		areaList[a].dirty = false
 		areaList[a].arealock.Unlock()
 
-		os.MkdirAll(dataDir, 0755)
+		os.MkdirAll(dataDir+"/"+areaDir, 0755)
 		_, err = os.Create(filePath)
 
 		if err != nil {
