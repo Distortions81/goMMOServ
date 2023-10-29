@@ -133,7 +133,7 @@ func processGame() {
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
 
 			//Show bandwidth use
-			if gTestMode && gameTick%450 == 0 {
+			if gTestMode && gameTick%450 == 0 && getNumberConnections() > 0 {
 				fmt.Printf("Out: %vkbit\n", outsize.Load()*15/1024)
 			}
 
@@ -143,7 +143,7 @@ func processGame() {
 
 				if gTestMode {
 					//Log frame time
-					if gameTick%450 == 0 {
+					if gameTick%450 == 0 && getNumberConnections() > 0 {
 						fmt.Printf("took: %v\n", took.Round(time.Millisecond))
 					}
 				}
