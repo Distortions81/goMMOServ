@@ -11,9 +11,14 @@ import (
 const (
 	hdFileName = "heapDump.dat"
 	pLogName   = "panic.log"
-	version    = "0.0.1"
+	version    = "0.0.8"
 	buildInfo  = "dev"
 )
+
+func init() {
+	os.Remove(hdFileName)
+	os.Remove(pLogName)
+}
 
 func reportPanic(format string, args ...interface{}) {
 	if r := recover(); r != nil {
