@@ -6,10 +6,13 @@ import (
 	"fmt"
 	"io/ioutil"
 	"os"
+	"strings"
 )
 
 type saveData struct {
 	Version uint16
+	Name    string
+	ID      uint32
 	Objects []*worldObject
 }
 
@@ -56,5 +59,54 @@ func saveWorld() {
 			doLog(true, "WriteSector: WriteFile %v", err.Error())
 			return
 		}
+	}
+}
+
+func loadWorld() {
+	items, err := os.ReadDir(dataDir)
+	if err != nil {
+		doLog(true, "Unable to read data dir.")
+		return
+	}
+
+	for _, item := range items {
+		var sdat saveData
+
+		if item.IsDir() {
+			continue
+		}
+		fileName := item.Name()
+
+		if !strings.HasSuffix(fileName, ".json") {
+			continue
+		}
+
+		data, err := os.ReadFile(fileName)
+		if err != nil {
+			doLog(true, "Unable to read file: %v", fileName)
+			continue
+		}
+
+		if data == nil {
+			doLog(true, "File contains no data: %v", fileName)
+			continue
+		}
+
+		buffer := bytes.NewBuffer(data)
+
+		decoder := json.NewDecoder(buffer)
+
+		err = decoder.Decode(&sdat)
+		if err != nil {
+			doLog(true, "Unable to decode json: %v", fileName)
+			continue
+		}
+
+		if sdat.Version != areaVersion {
+			doLog(true, "Incompatable area version: %v", fileName)
+			continue
+		}
+
+		//Put data into an area
 	}
 }
