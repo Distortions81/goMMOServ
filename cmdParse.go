@@ -260,6 +260,9 @@ func cmd_chat(player *playerData, data []byte) {
 	defer playerListLock.RUnlock()
 
 	pName := fmt.Sprintf("Player-%v says: %v", player.id, string(data))
+	if player.name != "" {
+		pName = fmt.Sprintf("%v says: %v", player.name, string(data))
+	}
 
 	for _, target := range playerList {
 		if target.conn == nil {
