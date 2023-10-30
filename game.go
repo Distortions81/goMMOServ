@@ -40,11 +40,6 @@ func processGame() {
 
 			for _, player := range playerList {
 
-				//Saninity check
-				if player.conn == nil {
-					continue
-				}
-
 				wg.Add()
 				go func(player *playerData) {
 					//Lock player
@@ -158,7 +153,7 @@ func processGame() {
 
 	/* Spawn players for test mode */
 	if gTestMode {
-		for i := 0; i < 5000; i++ {
+		for i := 0; i < 2500; i++ {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(20000)),
 				Y: uint32(int(xyHalf) + rand.Intn(20000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
@@ -287,12 +282,16 @@ func removeWorldObject(area *areaData, pos XY, wObject *worldObject) {
 	//Calc chunk pos
 	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
+	if area.Chunks[chunkPos] == nil {
+		return
+	}
+
 	//Lock chunk
 	area.Chunks[chunkPos].chunkLock.Lock()
 	//Get players in chunk
 	chunkObjects := area.Chunks[chunkPos].WorldObjects
 
-	//Find player
+	//Find obj
 	var deleteme int = -1
 	var numObjs = len(chunkObjects) - 1
 	for t, target := range chunkObjects {

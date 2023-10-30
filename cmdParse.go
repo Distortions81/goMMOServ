@@ -39,12 +39,36 @@ func newParser(input []byte, player *playerData) {
 		cmd_command(player, data)
 	case CMD_EDITPLACEITEM:
 		cmd_editPlaceItem(player, data)
+	case CMD_EDITDELETEITEM:
+		cmd_editDeleteItem(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
 		removePlayer(player, "INVALID COMMAND")
 
 		return
 	}
+}
+
+func cmd_editDeleteItem(player *playerData, data []byte) {
+	defer reportPanic("cmd_editPlaceItem")
+
+	moveLock.Lock()
+	defer moveLock.Unlock()
+
+	inbuf := bytes.NewBuffer(data)
+
+	var editPosX, editPosY, editID uint32
+
+	binary.Read(inbuf, binary.LittleEndian, &editID)
+	binary.Read(inbuf, binary.LittleEndian, &editPosX)
+	binary.Read(inbuf, binary.LittleEndian, &editPosY)
+
+	pos := XY{X: editPosX, Y: editPosY}
+	newObj := &worldObject{uid: uint32(makeObjectID()), Pos: pos, ItemId: editID}
+
+	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
+	removeWorldObject(areaList[0], pos, newObj)
+	saveWorld()
 }
 
 func cmd_editPlaceItem(player *playerData, data []byte) {
