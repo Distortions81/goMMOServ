@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"log"
 	"net/http"
 	"time"
 )
@@ -63,6 +64,13 @@ func main() {
 
 	/* Start server*/
 	doLog(true, "Starting server...")
+
+	go func() {
+		if err := http.ListenAndServe(fmt.Sprintf("%v:80", *bindIP), http.HandlerFunc(redirectToTls)); err != nil {
+			log.Fatalf("ListenAndServe error: %v", err)
+		}
+	}()
+
 	err := server.ListenAndServeTLS("fullchain.pem", "privkey.pem")
 	if err != nil {
 		doLog(true, "ListenAndServeTLS: %v", err)

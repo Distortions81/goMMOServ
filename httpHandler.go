@@ -40,6 +40,10 @@ var (
 	maxConnections = 1000
 )
 
+func redirectToTls(w http.ResponseWriter, r *http.Request) {
+	http.Redirect(w, r, "https://go-game.net/"+r.RequestURI, http.StatusMovedPermanently)
+}
+
 func handleConnection(conn *websocket.Conn) {
 	defer reportPanic("handleConnection")
 
