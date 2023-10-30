@@ -155,7 +155,16 @@ func cmd_command(player *playerData, data []byte) {
 
 	//Check if enough args
 	if numWords < 2 {
-		writeToPlayer(player, CMD_COMMAND, []byte("Commands: /name playerName"))
+		writeToPlayer(player, CMD_COMMAND, []byte("Keybinds:"))
+		writeToPlayer(player, CMD_COMMAND, []byte("[ \\ ] key -- toggle edit mode, click to place"))
+		writeToPlayer(player, CMD_COMMAND, []byte("[ + ] and [ - ] keys, cycle objects in edit mode"))
+		writeToPlayer(player, CMD_COMMAND, []byte("[ n ], cycle night level"))
+		writeToPlayer(player, CMD_COMMAND, []byte("[ESC] exit Chat or Command mode."))
+		writeToPlayer(player, CMD_COMMAND, []byte("[Return] or [Enter] Chat mode"))
+		writeToPlayer(player, CMD_COMMAND, []byte("[ ~ ] Command mode"))
+
+		writeToPlayer(player, CMD_COMMAND, []byte("Commands:"))
+		writeToPlayer(player, CMD_COMMAND, []byte("/name NewName"))
 		return
 	}
 
