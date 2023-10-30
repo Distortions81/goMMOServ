@@ -28,7 +28,6 @@ func saveWorld() {
 			sdat.Objects = append(sdat.Objects, chunk.WorldObjects...)
 		}
 
-		areaList[a].arealock.Lock()
 		sdat.Version = areaVersion
 
 		outbuf := new(bytes.Buffer)
@@ -40,11 +39,9 @@ func saveWorld() {
 		err := enc.Encode(sdat)
 		if err != nil {
 			doLog(true, "WriteSector: enc.Encode %v", err.Error())
-			areaList[a].arealock.Unlock()
 			return
 		}
 		areaList[a].dirty = false
-		areaList[a].arealock.Unlock()
 
 		os.MkdirAll(dataDir+"/"+areaDir, 0755)
 		_, err = os.Create(filePath)

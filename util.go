@@ -5,7 +5,6 @@ import (
 	"compress/zlib"
 	"io"
 	"math"
-	"sync"
 )
 
 func distance(a, b XY) float64 {
@@ -53,16 +52,11 @@ func CompressZip(data []byte) []byte {
 }
 
 var playerTopID uint32
-var playerIDLock sync.Mutex
 
 var objectTopID uint64
-var objectIDLock sync.Mutex
 
 func makePlayerID() uint32 {
 	defer reportPanic("makePlayerID")
-
-	playerIDLock.Lock()
-	defer playerIDLock.Unlock()
 
 	playerTopID++
 	return playerTopID
@@ -70,9 +64,6 @@ func makePlayerID() uint32 {
 
 func makeObjectID() uint64 {
 	defer reportPanic("makObjectID")
-
-	objectIDLock.Lock()
-	defer objectIDLock.Unlock()
 
 	objectTopID++
 	return objectTopID

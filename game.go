@@ -35,16 +35,12 @@ func processGame() {
 			loopStart := time.Now()
 
 			//Lock playerlist, read
-			playerListLock.RLock()
 			var outsize atomic.Uint32
 
 			for _, player := range playerList {
 
 				wg.Add()
 				go func(player *playerData) {
-					//Lock player
-					player.plock.Lock()
-					defer player.plock.Unlock()
 
 					var numPlayers uint16
 					var numObj uint16
@@ -66,7 +62,6 @@ func processGame() {
 							}
 
 							//Lock chunk
-							chunk.chunkLock.Lock()
 							for _, target := range chunk.players {
 
 								//Serialize data
@@ -96,9 +91,6 @@ func processGame() {
 
 							// Tally output
 							outsize.Add(uint32(numObj) * 96)
-
-							//Unlock chunk
-							chunk.chunkLock.Unlock()
 						}
 					}
 
@@ -120,15 +112,12 @@ func processGame() {
 			}
 			wg.Wait()
 
-			//Unlock player list
-			playerListLock.RUnlock()
-
 			//Calculate remaining frame time
 			took := time.Since(loopStart)
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
 
 			//Show bandwidth use
-			if gTestMode && gameTick%450 == 0 && getNumberConnections() > 0 {
+			if gTestMode && gameTick%450 == 0 && numConnections.Load() > 0 {
 				fmt.Printf("Out: %vkbit\n", outsize.Load()*15/1024)
 			}
 
@@ -138,7 +127,7 @@ func processGame() {
 
 				if gTestMode {
 					//Log frame time
-					if gameTick%450 == 0 && getNumberConnections() > 0 {
+					if gameTick%450 == 0 && numConnections.Load() > 0 {
 						fmt.Printf("took: %v\n", took.Round(time.Millisecond))
 					}
 				}
@@ -157,10 +146,8 @@ func processGame() {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(20000)),
 				Y: uint32(int(xyHalf) + rand.Intn(20000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
-			playerListLock.Lock()
 			playerList[player.id] = player
 			addPlayerToWorld(player.area, startLoc, player)
-			playerListLock.Unlock()
 		}
 	}
 }
@@ -180,18 +167,14 @@ func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 
 	//Create chunk if needed
 	if chunk == nil {
-		area.arealock.Lock()
 		area.Chunks[chunkPos] = &chunkData{}
-		area.arealock.Unlock()
 		doLog(true, "Created chunk: %v,%v", chunkPos.X, chunkPos.Y)
 	}
 
 	/* Add player */
-	area.Chunks[chunkPos].chunkLock.Lock()
 	area.Chunks[chunkPos].players =
 		append(area.Chunks[chunkPos].players,
 			player)
-	area.Chunks[chunkPos].chunkLock.Unlock()
 }
 
 func removePlayerWorld(area *areaData, pos XY, player *playerData) {
@@ -205,8 +188,6 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 	//Calc chunk pos
 	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
-	//Lock chunk
-	area.Chunks[chunkPos].chunkLock.Lock()
 	//Get players in chunk
 	chunkPlayers := area.Chunks[chunkPos].players
 
@@ -227,8 +208,6 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 			area.Chunks[chunkPos].players[numPlayers]
 		area.Chunks[chunkPos].players = chunkPlayers[:numPlayers]
 	}
-	//Unlock chunk
-	area.Chunks[chunkPos].chunkLock.Unlock()
 }
 
 func movePlayer(area *areaData, pos XY, player *playerData) {
@@ -259,16 +238,12 @@ func addWorldObject(area *areaData, pos XY, wObject *worldObject) {
 
 	//Create chunk if needed
 	if chunk == nil {
-		area.arealock.Lock()
 		area.Chunks[chunkPos] = &chunkData{}
-		area.arealock.Unlock()
 		doLog(true, "Created chunk: %v,%v", chunkPos.X, chunkPos.Y)
 	}
 
 	/* Add object */
-	area.Chunks[chunkPos].chunkLock.Lock()
 	area.Chunks[chunkPos].WorldObjects = append(area.Chunks[chunkPos].WorldObjects, wObject)
-	area.Chunks[chunkPos].chunkLock.Unlock()
 }
 
 func removeWorldObject(area *areaData, pos XY, wObject *worldObject) {
@@ -286,8 +261,6 @@ func removeWorldObject(area *areaData, pos XY, wObject *worldObject) {
 		return
 	}
 
-	//Lock chunk
-	area.Chunks[chunkPos].chunkLock.Lock()
 	//Get players in chunk
 	chunkObjects := area.Chunks[chunkPos].WorldObjects
 
@@ -308,8 +281,6 @@ func removeWorldObject(area *areaData, pos XY, wObject *worldObject) {
 			area.Chunks[chunkPos].WorldObjects[numObjs]
 		area.Chunks[chunkPos].WorldObjects = chunkObjects[:numObjs]
 	}
-	//Unlock chunk
-	area.Chunks[chunkPos].chunkLock.Unlock()
 }
 
 func moveWorldObject(area *areaData, pos XY, wObject *worldObject) {
