@@ -6,26 +6,31 @@ import (
 	"fmt"
 	"math/rand"
 	"runtime"
+	"sync"
 	"sync/atomic"
 	"time"
 
 	"github.com/remeh/sizedwaitgroup"
 )
 
-const FrameSpeedNS = 66666666
+const (
+	FrameSpeedNS = 66666666
+	chunkDiv     = 128
+	searchChunks = 5
+)
 
-const chunkDiv = 128
-const numChunks = 5
+var processLock sync.RWMutex
+var editLock sync.RWMutex
 
 func processGame() {
-	defer reportPanic("processGame")
 
 	var gameTick uint64
 	go func() {
-
 		defer reportPanic("processGame goroutine")
+		time.Sleep(time.Second)
 
-		var pbuf, cbuf, obuf, ocbuf []byte
+		var playerBytes, countBytes, objectBytes, objectCountBytes []byte
+
 		//sized wait group, number of available threads
 		wg := sizedwaitgroup.New(runtime.NumCPU())
 
@@ -34,58 +39,55 @@ func processGame() {
 			gameTick++
 			loopStart := time.Now()
 
-			//Lock playerlist, read
-			playerListLock.RLock()
 			var outsize atomic.Uint32
+			processLock.Lock()
 
 			for _, player := range playerList {
+				if player.area == nil {
+					continue
+				}
 
 				wg.Add()
 				go func(player *playerData) {
-					//Lock player
-					player.plock.Lock()
-					defer player.plock.Unlock()
 
 					var numPlayers uint16
 					var numObj uint16
 
-					countbuf := bytes.NewBuffer(cbuf)
-					playerBuf := bytes.NewBuffer(pbuf)
+					countbuf := bytes.NewBuffer(countBytes)
+					playerBuf := bytes.NewBuffer(playerBytes)
 
-					objCountBuf := bytes.NewBuffer((ocbuf))
-					objBuf := bytes.NewBuffer(obuf)
+					objCountBuf := bytes.NewBuffer((objectCountBytes))
+					objBuf := bytes.NewBuffer(objectBytes)
 
 					//Search surrounding chunks
-					for x := -numChunks; x < numChunks; x++ {
-						for y := -numChunks; y < numChunks; y++ {
-							chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
-								Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+					for x := -searchChunks; x < searchChunks; x++ {
+						for y := -searchChunks; y < searchChunks; y++ {
+							//Calc chunk pos
+							chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x), Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+
+							player.area.areaLock.RLock()
 							chunk := player.area.Chunks[chunkPos]
+							player.area.areaLock.RUnlock()
+
 							if chunk == nil {
 								continue
 							}
 
-							//Lock chunk
-							chunk.chunkLock.Lock()
+							//Write players
 							for _, target := range chunk.players {
-
-								//Serialize data
 								binary.Write(playerBuf, binary.LittleEndian, &target.id)
 								binary.Write(playerBuf, binary.LittleEndian, &target.pos.X)
 								binary.Write(playerBuf, binary.LittleEndian, &target.pos.Y)
-
-								//Eventually move me to an event
 								binary.Write(playerBuf, binary.LittleEndian, &target.health)
 
+								//Tally players, needed for header
 								numPlayers++
 							}
-							//Tally players, needed for header
 
 							//Tally output
 							outsize.Add(uint32(numPlayers) * 104)
 
 							//Write world objects
-
 							for _, obj := range chunk.WorldObjects {
 								binary.Write(objBuf, binary.LittleEndian, &obj.ItemId)
 								binary.Write(objBuf, binary.LittleEndian, &obj.Pos.X)
@@ -96,9 +98,6 @@ func processGame() {
 
 							// Tally output
 							outsize.Add(uint32(numObj) * 96)
-
-							//Unlock chunk
-							chunk.chunkLock.Unlock()
 						}
 					}
 
@@ -119,17 +118,15 @@ func processGame() {
 
 			}
 			wg.Wait()
-
-			//Unlock player list
-			playerListLock.RUnlock()
+			processLock.Unlock()
 
 			//Calculate remaining frame time
 			took := time.Since(loopStart)
 			remaining := (time.Nanosecond * FrameSpeedNS) - took
 
 			//Show bandwidth use
-			if gTestMode && gameTick%450 == 0 && getNumberConnections() > 0 {
-				fmt.Printf("Out: %vkbit\n", outsize.Load()*15/1024)
+			if gTestMode && gameTick%450 == 0 && numConnections.Load() > 0 {
+				fmt.Printf("Out: %v mbit\n", outsize.Load()*15/1024/1024)
 			}
 
 			//Sleep if there is remaining frame time
@@ -138,7 +135,7 @@ func processGame() {
 
 				if gTestMode {
 					//Log frame time
-					if gameTick%450 == 0 && getNumberConnections() > 0 {
+					if gameTick%450 == 0 && numConnections.Load() > 0 {
 						fmt.Printf("took: %v\n", took.Round(time.Millisecond))
 					}
 				}
@@ -153,15 +150,17 @@ func processGame() {
 
 	/* Spawn players for test mode */
 	if gTestMode {
+		processLock.Lock()
 		for i := 0; i < 2500; i++ {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(20000)),
 				Y: uint32(int(xyHalf) + rand.Intn(20000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
 			playerListLock.Lock()
-			playerList[player.id] = player
-			addPlayerToWorld(player.area, startLoc, player)
+			playerList = append(playerList, player)
 			playerListLock.Unlock()
+			addPlayerToWorld(player.area, startLoc, player)
 		}
+		processLock.Unlock()
 	}
 }
 
@@ -169,29 +168,20 @@ func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 	defer reportPanic("addPlayerToWorld")
 
 	//Sanity check
-	if area == nil {
+	if player == nil || area == nil {
 		return
 	}
-	//Calulate chunk pos
-	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
 	//Get chunk
-	chunk := area.Chunks[chunkPos]
+	chunk := getChunk(area, pos)
 
 	//Create chunk if needed
 	if chunk == nil {
-		area.arealock.Lock()
-		area.Chunks[chunkPos] = &chunkData{}
-		area.arealock.Unlock()
-		doLog(true, "Created chunk: %v,%v", chunkPos.X, chunkPos.Y)
+		chunk = assignChunk(area, pos, &chunkData{})
 	}
 
 	/* Add player */
-	area.Chunks[chunkPos].chunkLock.Lock()
-	area.Chunks[chunkPos].players =
-		append(area.Chunks[chunkPos].players,
-			player)
-	area.Chunks[chunkPos].chunkLock.Unlock()
+	chunk.players = append(chunk.players, player)
 }
 
 func removePlayerWorld(area *areaData, pos XY, player *playerData) {
@@ -205,10 +195,11 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 	//Calc chunk pos
 	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
-	//Lock chunk
-	area.Chunks[chunkPos].chunkLock.Lock()
 	//Get players in chunk
 	chunkPlayers := area.Chunks[chunkPos].players
+
+	//Lock, or we could delete wrong item
+	processLock.Lock()
 
 	//Find player
 	var deleteme int = -1
@@ -227,12 +218,18 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 			area.Chunks[chunkPos].players[numPlayers]
 		area.Chunks[chunkPos].players = chunkPlayers[:numPlayers]
 	}
-	//Unlock chunk
-	area.Chunks[chunkPos].chunkLock.Unlock()
+
+	processLock.Unlock()
+
 }
 
 func movePlayer(area *areaData, pos XY, player *playerData) {
 	defer reportPanic("movePlayer")
+
+	//Sanity check
+	if player == nil || area == nil {
+		return
+	}
 
 	//Remove player from old chunk
 	removePlayerWorld(area, player.pos, player)
@@ -248,79 +245,112 @@ func addWorldObject(area *areaData, pos XY, wObject *worldObject) {
 	defer reportPanic("addWorldObject")
 
 	//Sanity check
-	if area == nil {
+	if area == nil || wObject == nil {
 		return
 	}
-	//Calulate chunk pos
-	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
 
 	//Get chunk
-	chunk := area.Chunks[chunkPos]
+	chunk := getChunk(area, pos)
 
 	//Create chunk if needed
 	if chunk == nil {
-		area.arealock.Lock()
-		area.Chunks[chunkPos] = &chunkData{}
-		area.arealock.Unlock()
-		doLog(true, "Created chunk: %v,%v", chunkPos.X, chunkPos.Y)
+		chunk = assignChunk(area, pos, &chunkData{})
 	}
 
 	/* Add object */
-	area.Chunks[chunkPos].chunkLock.Lock()
-	area.Chunks[chunkPos].WorldObjects = append(area.Chunks[chunkPos].WorldObjects, wObject)
-	area.Chunks[chunkPos].chunkLock.Unlock()
+	chunk.WorldObjects = append(chunk.WorldObjects, wObject)
 }
 
-func removeWorldObject(area *areaData, pos XY, wObject *worldObject) {
+func removeWorldObject(area *areaData, pos XY, uid uint32) {
 	defer reportPanic("removePlayerWorld")
+
+	//Sanity check
+	if area == nil {
+		return
+	}
+
+	chunk := getChunk(area, pos)
+
+	//Nothing here, exit
+	if chunk == nil {
+		return
+	}
+
+	//Find obj
+	var deleteme int = -1
+	var numObjs = len(chunk.WorldObjects) - 1
+	for t, target := range chunk.WorldObjects {
+		if target.uid == uid {
+			deleteme = t
+			break
+		}
+	}
+
+	//If last object, just clear list
+	if numObjs <= 0 {
+		chunk.WorldObjects = []*worldObject{}
+		return
+	}
+
+	//If found, delete
+	if deleteme > -1 {
+
+		//Fast, but does not preserve order
+		chunk.WorldObjects[deleteme] =
+			chunk.WorldObjects[numObjs]
+		chunk.WorldObjects = chunk.WorldObjects[:numObjs]
+	}
+}
+
+func moveWorldObject(area *areaData, pos XY, wObject *worldObject) {
+	defer reportPanic("moveWorldObject")
 
 	//Sanity check
 	if wObject == nil || area == nil {
 		return
 	}
 
-	//Calc chunk pos
-	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
-
-	if area.Chunks[chunkPos] == nil {
-		return
-	}
-
-	//Lock chunk
-	area.Chunks[chunkPos].chunkLock.Lock()
-	//Get players in chunk
-	chunkObjects := area.Chunks[chunkPos].WorldObjects
-
-	//Find obj
-	var deleteme int = -1
-	var numObjs = len(chunkObjects) - 1
-	for t, target := range chunkObjects {
-		if target.uid == wObject.uid {
-			deleteme = t
-			break
-		}
-	}
-
-	//Sanity check
-	if deleteme >= 0 {
-		//Fast, non-order-preserving delete player from chunk
-		area.Chunks[chunkPos].WorldObjects[deleteme] =
-			area.Chunks[chunkPos].WorldObjects[numObjs]
-		area.Chunks[chunkPos].WorldObjects = chunkObjects[:numObjs]
-	}
-	//Unlock chunk
-	area.Chunks[chunkPos].chunkLock.Unlock()
-}
-
-func moveWorldObject(area *areaData, pos XY, wObject *worldObject) {
-	defer reportPanic("movePlayer")
-
 	//Remove player from old chunk
-	removeWorldObject(area, wObject.Pos, wObject)
+	removeWorldObject(area, wObject.Pos, wObject.uid)
 
 	//Add player to new chunk
 	addWorldObject(area, pos, wObject)
 
-	//Update player position
+	//Update position
 	wObject.Pos = pos
+}
+
+func getChunk(area *areaData, pos XY) *chunkData {
+	defer reportPanic("getChunk")
+
+	//Sanity check
+	if area == nil {
+		return nil
+	}
+
+	//Calc chunk pos
+	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
+
+	area.areaLock.RLock()
+	defer area.areaLock.RUnlock()
+
+	return area.Chunks[chunkPos]
+}
+
+func assignChunk(area *areaData, pos XY, chunk *chunkData) *chunkData {
+	defer reportPanic("assignChunk")
+
+	//Sanity check
+	if area == nil || chunk == nil {
+		return nil
+	}
+
+	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
+
+	area.areaLock.Lock()
+	defer area.areaLock.Unlock()
+
+	area.Chunks[chunkPos] = chunk
+
+	return chunk
 }

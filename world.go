@@ -23,12 +23,14 @@ const suffix = ".json"
 func saveWorld() {
 	var sdat saveData
 
+	processLock.Lock()
+	defer processLock.Unlock()
+
 	for a, area := range areaList {
 		for _, chunk := range area.Chunks {
 			sdat.Objects = append(sdat.Objects, chunk.WorldObjects...)
 		}
 
-		areaList[a].arealock.Lock()
 		sdat.Version = areaVersion
 
 		outbuf := new(bytes.Buffer)
@@ -40,11 +42,9 @@ func saveWorld() {
 		err := enc.Encode(sdat)
 		if err != nil {
 			doLog(true, "WriteSector: enc.Encode %v", err.Error())
-			areaList[a].arealock.Unlock()
 			return
 		}
 		areaList[a].dirty = false
-		areaList[a].arealock.Unlock()
 
 		os.MkdirAll(dataDir+"/"+areaDir, 0755)
 		_, err = os.Create(filePath)
@@ -64,6 +64,9 @@ func saveWorld() {
 }
 
 func loadWorld() {
+	processLock.Lock()
+	defer processLock.Unlock()
+
 	doLog(true, "Loading areas...")
 	items, err := os.ReadDir(dataDir + "/" + areaDir)
 	if err != nil {

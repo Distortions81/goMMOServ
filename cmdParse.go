@@ -5,7 +5,6 @@ import (
 	"encoding/binary"
 	"fmt"
 	"strings"
-	"sync"
 
 	"github.com/gorilla/websocket"
 )
@@ -52,9 +51,6 @@ func newParser(input []byte, player *playerData) {
 func cmd_editDeleteItem(player *playerData, data []byte) {
 	defer reportPanic("cmd_editPlaceItem")
 
-	moveLock.Lock()
-	defer moveLock.Unlock()
-
 	inbuf := bytes.NewBuffer(data)
 
 	var editPosX, editPosY, editID uint32
@@ -64,18 +60,18 @@ func cmd_editDeleteItem(player *playerData, data []byte) {
 	binary.Read(inbuf, binary.LittleEndian, &editPosY)
 
 	pos := XY{X: editPosX, Y: editPosY}
-	newObj := &worldObject{uid: uint32(makeObjectID()), Pos: pos, ItemId: editID}
 
 	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
-	removeWorldObject(areaList[0], pos, newObj)
+	removeWorldObject(areaList[0], pos, editID)
 	saveWorld()
 }
 
 func cmd_editPlaceItem(player *playerData, data []byte) {
 	defer reportPanic("cmd_editPlaceItem")
 
-	moveLock.Lock()
-	defer moveLock.Unlock()
+	if player == nil || player.area == nil {
+		return
+	}
 
 	inbuf := bytes.NewBuffer(data)
 
@@ -89,8 +85,7 @@ func cmd_editPlaceItem(player *playerData, data []byte) {
 	newObj := &worldObject{uid: uint32(makeObjectID()), Pos: pos, ItemId: editID}
 
 	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
-	addWorldObject(areaList[0], pos, newObj)
-	saveWorld()
+	addWorldObject(player.area, pos, newObj)
 }
 
 /* This should use a cached list */
@@ -121,10 +116,6 @@ func sendPlayernames(player *playerData, setName bool) {
 			writeToPlayer(target, CMD_PLAYERNAMES, outbuf.Bytes())
 		}
 	} else {
-
-		//Lock player list
-		playerListLock.RLock()
-		defer playerListLock.RUnlock()
 
 		//Count number of players that have names
 		for _, player := range playerList {
@@ -209,9 +200,7 @@ func cmd_command(player *playerData, data []byte) {
 			writeToPlayer(player, CMD_COMMAND, []byte("Name too long."))
 			return
 		}
-		player.plock.Lock()
 		player.name = allParams
-		player.plock.Unlock()
 		writeToPlayer(player, CMD_COMMAND, []byte("Name set."))
 		sendPlayernames(player, true)
 	}
@@ -236,7 +225,7 @@ func cmd_init(player *playerData, data []byte) {
 
 	//Send player id
 	binary.Write(outbuf, binary.LittleEndian, &player.id)
-	binary.Write(outbuf, binary.LittleEndian, player.area.ID)
+	binary.Write(outbuf, binary.LittleEndian, &player.area.ID)
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 
 	//Use move command to init
@@ -255,10 +244,6 @@ func cmd_chat(player *playerData, data []byte) {
 		return
 	}
 
-	//Lock playerlist
-	playerListLock.RLock()
-	defer playerListLock.RUnlock()
-
 	pName := fmt.Sprintf("Player-%v says: %v", player.id, string(data))
 	if player.name != "" {
 		pName = fmt.Sprintf("%v says: %v", player.name, string(data))
@@ -275,10 +260,6 @@ func cmd_chat(player *playerData, data []byte) {
 func send_chat(data string) {
 	defer reportPanic("send_chat")
 
-	//Lock playerlist
-	playerListLock.RLock()
-	defer playerListLock.RUnlock()
-
 	for _, target := range playerList {
 		if target.conn == nil {
 			continue
@@ -287,13 +268,8 @@ func send_chat(data string) {
 	}
 }
 
-var moveLock sync.Mutex
-
 func cmd_move(player *playerData, data []byte) {
 	defer reportPanic("cmd_move")
-
-	moveLock.Lock()
-	defer moveLock.Unlock()
 
 	inbuf := bytes.NewBuffer(data)
 
@@ -305,10 +281,6 @@ func cmd_move(player *playerData, data []byte) {
 	//Put position into XY format
 	var newPos XY = XY{X: uint32(int(player.pos.X) + int(newPosX)),
 		Y: uint32(int(player.pos.Y) + int(newPosY))}
-
-	//Lock player
-	player.plock.Lock()
-	defer player.plock.Unlock()
 
 	//Check surrounding area for collisions
 	for x := -2; x < 2; x++ {
@@ -329,9 +301,7 @@ func cmd_move(player *playerData, data []byte) {
 					//Skip self
 					continue
 				}
-				target.plock.RLock()
 				dist := distance(target.pos, newPos)
-				target.plock.RUnlock()
 
 				if dist < 10 {
 					fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
@@ -373,15 +343,12 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 		doLog(true, "ID: %v, Sent: %v, Data: %v", player.id, cmdName, string(input))
 	}
 
-	//Write to player
-	player.connLock.Lock()
 	var err error
 	if input == nil {
 		err = player.conn.WriteMessage(websocket.BinaryMessage, []byte{byte(header)})
 	} else {
 		err = player.conn.WriteMessage(websocket.BinaryMessage, append([]byte{byte(header)}, input...))
 	}
-	player.connLock.Unlock()
 
 	if err != nil {
 		doLog(true, "Error writing response: %v", err)

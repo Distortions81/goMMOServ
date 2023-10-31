@@ -13,16 +13,14 @@ type worldObject struct {
 }
 
 type playerData struct {
-	conn     *websocket.Conn
-	connLock sync.Mutex
+	conn *websocket.Conn
 
 	name   string
 	health int8
 
-	id    uint32
-	pos   XY
-	area  *areaData
-	plock sync.RWMutex
+	id   uint32
+	pos  XY
+	area *areaData
 }
 
 type XY struct {
@@ -43,15 +41,15 @@ type XYs struct {
 type areaData struct {
 	Version uint16
 
-	Name     string
-	ID       uint16
-	arealock sync.RWMutex
-	Chunks   map[XY]*chunkData
-	dirty    bool
+	Name   string
+	ID     uint16
+	Chunks map[XY]*chunkData
+	dirty  bool
+
+	areaLock sync.RWMutex
 }
 
 type chunkData struct {
 	WorldObjects []*worldObject
 	players      []*playerData
-	chunkLock    sync.RWMutex
 }
