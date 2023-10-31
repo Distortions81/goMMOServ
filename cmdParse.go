@@ -63,7 +63,7 @@ func cmd_editDeleteItem(player *playerData, data []byte) {
 
 	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
 	removeWorldObject(areaList[0], pos, editID)
-	saveWorld()
+	areaList[0].dirty = true
 }
 
 func cmd_editPlaceItem(player *playerData, data []byte) {
@@ -86,6 +86,7 @@ func cmd_editPlaceItem(player *playerData, data []byte) {
 
 	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
 	addWorldObject(player.area, pos, newObj)
+	player.area.dirty = true
 }
 
 /* This should use a cached list */

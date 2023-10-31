@@ -36,6 +36,8 @@ func main() {
 	areaList = append(areaList, tmp)
 	loadWorld()
 
+	go autoSaveWorld()
+
 	processGame()
 
 	/* Download server start */

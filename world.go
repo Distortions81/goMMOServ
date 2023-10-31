@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os"
 	"strings"
+	"time"
 )
 
 type saveData struct {
@@ -15,10 +16,21 @@ type saveData struct {
 	Objects []*worldObject
 }
 
-const areaVersion = 1
-const dataDir = "data"
-const areaDir = "areas"
-const suffix = ".json"
+const (
+	areaVersion      = 1
+	dataDir          = "data"
+	areaDir          = "areas"
+	suffix           = ".json"
+	worldSaveSeconds = 30
+)
+
+func autoSaveWorld() {
+
+	for {
+		time.Sleep(time.Second * worldSaveSeconds)
+		saveWorld()
+	}
+}
 
 func saveWorld() {
 	var sdat saveData
@@ -27,6 +39,11 @@ func saveWorld() {
 	defer processLock.Unlock()
 
 	for a, area := range areaList {
+
+		if !area.dirty {
+			continue
+		}
+
 		for _, chunk := range area.Chunks {
 			sdat.Objects = append(sdat.Objects, chunk.WorldObjects...)
 		}
@@ -60,6 +77,9 @@ func saveWorld() {
 			doLog(true, "WriteSector: WriteFile %v", err.Error())
 			return
 		}
+
+		area.dirty = false
+		doLog(false, "Autosave: %v", area.Name)
 	}
 }
 
