@@ -60,15 +60,18 @@ func cmd_editDeleteItem(player *playerData, data []byte) {
 	binary.Read(inbuf, binary.LittleEndian, &editPosY)
 
 	pos := XY{X: editPosX, Y: editPosY}
-	newObj := &worldObject{uid: uint32(makeObjectID()), Pos: pos, ItemId: editID}
 
 	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
-	removeWorldObject(areaList[0], pos, newObj)
+	removeWorldObject(areaList[0], pos, editID)
 	saveWorld()
 }
 
 func cmd_editPlaceItem(player *playerData, data []byte) {
 	defer reportPanic("cmd_editPlaceItem")
+
+	if player == nil || player.area == nil {
+		return
+	}
 
 	inbuf := bytes.NewBuffer(data)
 
@@ -82,8 +85,7 @@ func cmd_editPlaceItem(player *playerData, data []byte) {
 	newObj := &worldObject{uid: uint32(makeObjectID()), Pos: pos, ItemId: editID}
 
 	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
-	addWorldObject(areaList[0], pos, newObj)
-	saveWorld()
+	addWorldObject(player.area, pos, newObj)
 }
 
 /* This should use a cached list */
@@ -223,7 +225,7 @@ func cmd_init(player *playerData, data []byte) {
 
 	//Send player id
 	binary.Write(outbuf, binary.LittleEndian, &player.id)
-	binary.Write(outbuf, binary.LittleEndian, player.area.ID)
+	binary.Write(outbuf, binary.LittleEndian, &player.area.ID)
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 
 	//Use move command to init

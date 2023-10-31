@@ -1,6 +1,8 @@
 package main
 
 import (
+	"sync"
+
 	"github.com/gorilla/websocket"
 )
 
@@ -43,6 +45,8 @@ type areaData struct {
 	ID     uint16
 	Chunks map[XY]*chunkData
 	dirty  bool
+
+	areaLock sync.RWMutex
 }
 
 type chunkData struct {

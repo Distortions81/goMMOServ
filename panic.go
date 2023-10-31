@@ -36,6 +36,8 @@ func reportPanic(format string, args ...interface{}) {
 
 		os.WriteFile(pLogName, []byte(buf), 0660)
 		doLog(true, "wrote %v", pLogName)
-		send_chat("Warning: Server paniced, but recovered (wrote to log)")
+
+		buf = fmt.Sprintf("Warning: Server panic (recovered: %v).", input)
+		send_chat(buf)
 	}
 }

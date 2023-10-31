@@ -10,7 +10,7 @@ import (
 
 var (
 	fileServer http.Handler
-	areaList   map[uint16]*areaData
+	areaList   []*areaData
 	gTestMode  bool
 )
 
@@ -33,8 +33,7 @@ func main() {
 
 	/* make test area */
 	tmp := &areaData{Name: "test", ID: 0, Chunks: make(map[XY]*chunkData)}
-	areaList = make(map[uint16]*areaData)
-	areaList[tmp.ID] = tmp
+	areaList = append(areaList, tmp)
 	loadWorld()
 
 	processGame()

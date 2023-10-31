@@ -23,6 +23,9 @@ const suffix = ".json"
 func saveWorld() {
 	var sdat saveData
 
+	processLock.Lock()
+	defer processLock.Unlock()
+
 	for a, area := range areaList {
 		for _, chunk := range area.Chunks {
 			sdat.Objects = append(sdat.Objects, chunk.WorldObjects...)
@@ -61,6 +64,9 @@ func saveWorld() {
 }
 
 func loadWorld() {
+	processLock.Lock()
+	defer processLock.Unlock()
+
 	doLog(true, "Loading areas...")
 	items, err := os.ReadDir(dataDir + "/" + areaDir)
 	if err != nil {
