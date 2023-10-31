@@ -43,6 +43,9 @@ func processGame() {
 			processLock.Lock()
 
 			for _, player := range playerList {
+				if player.area == nil {
+					continue
+				}
 
 				wg.Add()
 				go func(player *playerData) {
@@ -59,7 +62,12 @@ func processGame() {
 					//Search surrounding chunks
 					for x := -searchChunks; x < searchChunks; x++ {
 						for y := -searchChunks; y < searchChunks; y++ {
-							chunk := getChunk(player.area, player.pos)
+							//Calc chunk pos
+							chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x), Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+
+							player.area.areaLock.RLock()
+							chunk := player.area.Chunks[chunkPos]
+							player.area.areaLock.RUnlock()
 
 							if chunk == nil {
 								continue
@@ -118,7 +126,7 @@ func processGame() {
 
 			//Show bandwidth use
 			if gTestMode && gameTick%450 == 0 && numConnections.Load() > 0 {
-				fmt.Printf("Out: %vkbit\n", outsize.Load()*15/1024)
+				fmt.Printf("Out: %v mbit\n", outsize.Load()*15/1024/1024)
 			}
 
 			//Sleep if there is remaining frame time
