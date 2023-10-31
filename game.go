@@ -12,10 +12,11 @@ import (
 	"github.com/remeh/sizedwaitgroup"
 )
 
-const FrameSpeedNS = 66666666
-
-const chunkDiv = 128
-const numChunks = 5
+const (
+	FrameSpeedNS = 66666666
+	chunkDiv     = 128
+	numChunks    = 5
+)
 
 func processGame() {
 	defer reportPanic("processGame")
@@ -34,7 +35,6 @@ func processGame() {
 			gameTick++
 			loopStart := time.Now()
 
-			//Lock playerlist, read
 			var outsize atomic.Uint32
 
 			for _, player := range playerList {
@@ -146,7 +146,9 @@ func processGame() {
 			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(20000)),
 				Y: uint32(int(xyHalf) + rand.Intn(20000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
-			playerList[player.id] = player
+			playerListLock.Lock()
+			playerList = append(playerList, player)
+			playerListLock.Unlock()
 			addPlayerToWorld(player.area, startLoc, player)
 		}
 	}

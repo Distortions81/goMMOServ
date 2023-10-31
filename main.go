@@ -37,8 +37,6 @@ func main() {
 	areaList[tmp.ID] = tmp
 	loadWorld()
 
-	playerList = make(map[uint32]*playerData)
-
 	processGame()
 
 	/* Download server start */

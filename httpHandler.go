@@ -5,6 +5,7 @@ import (
 	"log"
 	"math/rand"
 	"net/http"
+	"sync"
 	"sync/atomic"
 
 	"github.com/gorilla/websocket"
@@ -31,8 +32,8 @@ func siteHandler(w http.ResponseWriter, r *http.Request) {
 
 var (
 	numConnections atomic.Int32
-
-	playerList map[uint32]*playerData
+	playerList     []*playerData
+	playerListLock sync.Mutex
 
 	maxNetRead           = 1024 * 1000
 	maxConnections int32 = 1000
@@ -55,7 +56,9 @@ func handleConnection(conn *websocket.Conn) {
 
 	startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(128)), Y: uint32(int(xyHalf) + rand.Intn(128))}
 	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
-	playerList[player.id] = player
+	playerListLock.Lock()
+	playerList = append(playerList, player)
+	playerListLock.Unlock()
 	addPlayerToWorld(player.area, startLoc, player)
 
 	conn.SetReadLimit(int64(maxNetRead))
@@ -79,14 +82,34 @@ func removePlayer(player *playerData, reason string) {
 	if player == nil {
 		return
 	}
-	playerID := player.id
+
+	var reasonStr string
+	if player.name == "" {
+		reasonStr = fmt.Sprintf("Player-%v left the game. (%v)", player.id, reason)
+	} else {
+		reasonStr = fmt.Sprintf("%v left the game. (%v)", player.name, reason)
+	}
+
 	killConnection(player, true)
-
 	removePlayerWorld(player.area, player.pos, player)
-	delete(playerList, player.id)
+	deletePlayer(player)
 
-	reasonStr := fmt.Sprintf("Player-%v left the game. (%v)", playerID, reason)
 	send_chat(reasonStr)
+}
+
+func deletePlayer(player *playerData) {
+
+	playerListLock.Lock()
+	defer playerListLock.Unlock()
+
+	//Does not preserve order
+	playerListLen := len(playerList) - 1
+	for t, target := range playerList {
+		if target.id == player.id {
+			playerList[t] = playerList[playerListLen]
+			playerList = playerList[:playerListLen]
+		}
+	}
 }
 
 func killConnection(player *playerData, force bool) {
