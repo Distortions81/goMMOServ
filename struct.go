@@ -21,7 +21,7 @@ type playerData struct {
 	health int8
 
 	id   uint32
-	pos  XY
+	pos  XYf32
 	area *areaData
 }
 

@@ -36,10 +36,25 @@ func moveDir(pos *XYf32, dir DIR) {
 	default:
 		return
 	}
-
 }
 
-func distance(a, b XY) float64 {
+func floorXY(input *XYf32) XY {
+	return XY{X: uint32(input.X), Y: uint32(input.Y)}
+}
+
+func floatXY(input *XY) XYf32 {
+	return XYf32{X: float32(input.X), Y: float32(input.Y)}
+}
+
+func distanceFloat(a, b XYf32) float64 {
+
+	dx := a.X - b.X
+	dy := a.Y - b.Y
+
+	return math.Sqrt(float64(dx*dx + dy*dy))
+}
+
+func distanceInt(a, b XY) float64 {
 
 	dx := a.X - b.X
 	dy := a.Y - b.Y

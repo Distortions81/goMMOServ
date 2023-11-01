@@ -274,14 +274,13 @@ func cmd_move(player *playerData, data []byte) {
 
 	inbuf := bytes.NewBuffer(data)
 
-	var newPosX, newPosY int8
+	var goDir DIR
 	//Read position
-	binary.Read(inbuf, binary.LittleEndian, &newPosX)
-	binary.Read(inbuf, binary.LittleEndian, &newPosY)
+	binary.Read(inbuf, binary.LittleEndian, &goDir)
 
 	//Put position into XY format
-	var newPos XY = XY{X: uint32(int(player.pos.X) + int(newPosX)),
-		Y: uint32(int(player.pos.Y) + int(newPosY))}
+	var newPos = player.pos
+	moveDir(&newPos, goDir)
 
 	//Check surrounding area for collisions
 	for x := -2; x < 2; x++ {
@@ -302,7 +301,7 @@ func cmd_move(player *playerData, data []byte) {
 					//Skip self
 					continue
 				}
-				dist := distance(target.pos, newPos)
+				dist := distanceFloat(target.pos, newPos)
 
 				if dist < 10 {
 					fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
