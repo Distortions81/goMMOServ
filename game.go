@@ -16,7 +16,7 @@ import (
 const (
 	FrameSpeedNS = 66666666
 	chunkDiv     = 128
-	searchChunks = 5
+	searchChunks = 6
 	lagThresh    = 8
 )
 
@@ -50,10 +50,10 @@ func movePlayer(player *playerData) {
 
 				if dist < 10 {
 					//fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
-					newPos.X += 24
-					newPos.Y += 24
+					newPos.X += 32
+					newPos.Y += 32
 
-					return
+					break
 				} else if dist < 24 {
 
 					//Don't move, player is in our way
