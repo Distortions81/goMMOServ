@@ -53,6 +53,16 @@ type areaData struct {
 }
 
 type chunkData struct {
+	chunkLock sync.RWMutex
+
 	WorldObjects []*worldObject
 	players      []*playerData
+
+	bufferFrame uint64
+
+	pBufCount    uint16
+	playerBuffer []byte
+
+	oBufCount uint16
+	objBuffer []byte
 }

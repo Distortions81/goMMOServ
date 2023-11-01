@@ -69,7 +69,7 @@ func movePlayer(player *playerData) {
 	movePlayerChunk(player.area, newPos, player)
 }
 
-var gameTick uint64
+var gameTick uint64 = 1
 
 func processGame() {
 
@@ -77,7 +77,7 @@ func processGame() {
 		defer reportPanic("processGame goroutine")
 		time.Sleep(time.Second)
 
-		var playerBytes, countBytes, objectBytes, objectCountBytes []byte
+		var playerBytes, pCountBytes, objBytes, objCountBytes []byte
 
 		//sized wait group, number of available threads
 		wg := sizedwaitgroup.New(runtime.NumCPU())
@@ -103,18 +103,20 @@ func processGame() {
 				wg.Add()
 				go func(player *playerData) {
 
-					var numPlayers uint16
-					var numObj uint16
+					var TnumPlayers, TnumObj uint16
 
-					countbuf := bytes.NewBuffer(countBytes)
+					pCountBuf := bytes.NewBuffer(pCountBytes)
 					playerBuf := bytes.NewBuffer(playerBytes)
 
-					objCountBuf := bytes.NewBuffer((objectCountBytes))
-					objBuf := bytes.NewBuffer(objectBytes)
+					oCountBuf := bytes.NewBuffer((objCountBytes))
+					objBuf := bytes.NewBuffer(objBytes)
 
 					//Search surrounding chunks
 					for x := -searchChunks; x < searchChunks; x++ {
 						for y := -searchChunks; y < searchChunks; y++ {
+
+							var oCount, pCount uint16
+
 							//Calc chunk pos
 							intPos := floorXY(&player.pos)
 							chunkPos := XY{X: uint32(int(intPos.X/chunkDiv) + x), Y: uint32(int(intPos.Y/chunkDiv) + y)}
@@ -125,45 +127,71 @@ func processGame() {
 								continue
 							}
 
+							chunk.chunkLock.RLock()
+							if chunk.bufferFrame == gameTick {
+								playerBuf.Write(chunk.playerBuffer)
+								objBuf.Write(chunk.objBuffer)
+
+								TnumPlayers += chunk.pBufCount
+								TnumObj += chunk.oBufCount
+								chunk.chunkLock.RUnlock()
+								continue
+							}
+							chunk.chunkLock.RUnlock()
+
+							var cBytes, pBytes []byte
+							oBuf := bytes.NewBuffer(cBytes)
+							pBuf := bytes.NewBuffer(pBytes)
+
 							//Write players
 							for _, target := range chunk.players {
 								nx := uint32(xyHalf - int(target.pos.X))
 								ny := uint32(xyHalf - int(target.pos.Y))
-								binary.Write(playerBuf, binary.LittleEndian, &target.id)
-								binary.Write(playerBuf, binary.LittleEndian, &nx)
-								binary.Write(playerBuf, binary.LittleEndian, &ny)
-								binary.Write(playerBuf, binary.LittleEndian, &target.health)
+								binary.Write(pBuf, binary.LittleEndian, &target.id)
+								binary.Write(pBuf, binary.LittleEndian, &nx)
+								binary.Write(pBuf, binary.LittleEndian, &ny)
+								binary.Write(pBuf, binary.LittleEndian, &target.health)
 
 								//Tally players, needed for header
-								numPlayers++
+								pCount++
 							}
-
-							//Tally output
-							outsize.Add(uint32(numPlayers) * 104)
+							TnumPlayers += pCount
 
 							//Write dynamic world objects
 							for _, obj := range chunk.WorldObjects {
-								binary.Write(objBuf, binary.LittleEndian, &obj.ItemId)
-								binary.Write(objBuf, binary.LittleEndian, &obj.Pos.X)
-								binary.Write(objBuf, binary.LittleEndian, &obj.Pos.Y)
+								binary.Write(oBuf, binary.LittleEndian, &obj.ItemId)
+								binary.Write(oBuf, binary.LittleEndian, &obj.Pos.X)
+								binary.Write(oBuf, binary.LittleEndian, &obj.Pos.Y)
 
-								numObj++
+								oCount++
 							}
 
-							// Tally output
-							outsize.Add(uint32(numObj) * 96)
+							TnumObj += oCount
+
+							chunk.chunkLock.Lock()
+							chunk.playerBuffer = pBuf.Bytes()
+							chunk.objBuffer = oBuf.Bytes()
+
+							playerBuf.Write(chunk.playerBuffer)
+							objBuf.Write(chunk.objBuffer)
+
+							chunk.pBufCount = pCount
+							chunk.oBufCount = oCount
+
+							chunk.bufferFrame = gameTick
+							chunk.chunkLock.Unlock()
 						}
 					}
 
 					//Write header
-					binary.Write(countbuf, binary.LittleEndian, &numPlayers)
-					outsize.Add(16)
-					binary.Write(objCountBuf, binary.LittleEndian, &numObj)
-					outsize.Add(16)
+					binary.Write(pCountBuf, binary.LittleEndian, &TnumPlayers)
+					binary.Write(oCountBuf, binary.LittleEndian, &TnumObj)
+
+					//doLog(false, "p %v, o %v", TnumPlayers, TnumObj)
 
 					//Write the whole thing
-					playerOut := append(countbuf.Bytes(), playerBuf.Bytes()...)
-					objOut := append(objCountBuf.Bytes(), objBuf.Bytes()...)
+					playerOut := append(pCountBuf.Bytes(), playerBuf.Bytes()...)
+					objOut := append(oCountBuf.Bytes(), objBuf.Bytes()...)
 
 					writeToPlayer(player, CMD_UPDATE, append(playerOut, objOut...))
 
@@ -205,7 +233,7 @@ func processGame() {
 	/* Spawn players for test mode */
 	if gTestMode {
 		processLock.Lock()
-		for i := 0; i < 2500; i++ {
+		for i := 0; i < 30000; i++ {
 			startLoc := XYf32{X: float32(rand.Intn(20000)),
 				Y: float32(rand.Intn(20000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
