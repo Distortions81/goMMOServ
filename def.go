@@ -1,6 +1,6 @@
 package main
 
-var protoVersion uint16 = 6
+var protoVersion uint16 = 7
 
 /* Directions */
 type DIR uint8
@@ -29,6 +29,7 @@ const (
 	CMD_UPDATE
 	CMD_CHAT
 	CMD_COMMAND
+	CMD_WORLDDATA
 	CMD_PLAYERNAMES
 	CMD_EDITPLACEITEM
 	CMD_EDITDELETEITEM
@@ -46,6 +47,7 @@ func init() {
 	cmdNames[CMD_UPDATE] = "CMD_UPDATE"
 	cmdNames[CMD_CHAT] = "CMD_CHAT"
 	cmdNames[CMD_COMMAND] = "CMD_COMMAND"
+	cmdNames[CMD_WORLDDATA] = "CMD_WORLDDATA"
 	cmdNames[CMD_PLAYERNAMES] = "CMD_PLAYERNAMES"
 	cmdNames[CMD_EDITPLACEITEM] = "CMD_EDITPLACEITEM"
 	cmdNames[CMD_EDITDELETEITEM] = "CMD_EDITDELETEITEM"

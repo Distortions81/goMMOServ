@@ -15,6 +15,8 @@ type worldObject struct {
 type playerData struct {
 	conn *websocket.Conn
 
+	chunkList []XY
+
 	name   string
 	health int8
 

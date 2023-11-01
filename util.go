@@ -8,6 +8,37 @@ import (
 	"sync"
 )
 
+const diagSpeed = 0.707
+
+func moveDir(pos *XYf32, dir DIR) {
+
+	switch dir {
+	case DIR_N:
+		pos.Y++
+	case DIR_NE:
+		pos.Y += diagSpeed
+		pos.X -= diagSpeed
+	case DIR_E:
+		pos.X--
+	case DIR_SE:
+		pos.X -= diagSpeed
+		pos.Y -= diagSpeed
+	case DIR_S:
+		pos.Y--
+	case DIR_SW:
+		pos.Y -= diagSpeed
+		pos.X += diagSpeed
+	case DIR_W:
+		pos.X++
+	case DIR_NW:
+		pos.Y += diagSpeed
+		pos.X += diagSpeed
+	default:
+		return
+	}
+
+}
+
 func distance(a, b XY) float64 {
 
 	dx := a.X - b.X

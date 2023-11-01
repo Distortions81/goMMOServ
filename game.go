@@ -87,7 +87,7 @@ func processGame() {
 							//Tally output
 							outsize.Add(uint32(numPlayers) * 104)
 
-							//Write world objects
+							//Write dynamic world objects
 							for _, obj := range chunk.WorldObjects {
 								binary.Write(objBuf, binary.LittleEndian, &obj.ItemId)
 								binary.Write(objBuf, binary.LittleEndian, &obj.Pos.X)
