@@ -283,8 +283,8 @@ func cmd_move(player *playerData, data []byte) {
 	moveDir(&newPos, goDir)
 
 	//Check surrounding area for collisions
-	for x := -2; x < 2; x++ {
-		for y := -2; y < 2; y++ {
+	for x := -1; x < 1; x++ {
+		for y := -1; y < 1; y++ {
 
 			//Get chunk
 			chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
