@@ -18,8 +18,11 @@ type playerData struct {
 	name   string
 	health int8
 
-	id   uint32
-	pos  XY
+	id            uint32
+	pos           XYf32
+	dir           DIR
+	lastDirUpdate uint64
+
 	area *areaData
 }
 

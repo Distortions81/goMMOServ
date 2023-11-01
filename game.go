@@ -14,17 +14,65 @@ import (
 )
 
 const (
-	FrameSpeedNS = 66666666
-	chunkDiv     = 128
-	searchChunks = 5
+	FrameSpeedNS        = 66666666
+	chunkDiv            = 128
+	searchChunks        = 5
+	lagThresh    uint64 = 8
 )
 
 var processLock sync.RWMutex
-var editLock sync.RWMutex
+
+func movePlayer(player *playerData) {
+
+	newPos := moveDir(player.pos, player.dir)
+
+	// Check surrounding area for collisions
+	for x := -1; x < 1; x++ {
+		for y := -1; y < 1; y++ {
+
+			//Get chunk
+			intPos := floorXY(&player.pos)
+			chunkPos := XY{X: uint32(int(intPos.X/chunkDiv) + x),
+				Y: uint32(int(intPos.Y/chunkDiv) + y)}
+			chunk := player.area.Chunks[chunkPos]
+			if chunk == nil {
+				continue
+			}
+
+			//Check chunk for collision
+			for _, target := range chunk.players {
+
+				if target.id == player.id {
+					//Skip self
+					continue
+				}
+				dist := distanceFloat(target.pos, newPos)
+
+				if dist < 10 {
+					fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
+					newPos.X += 24
+					newPos.Y += 24
+
+					return
+				} else if dist < 24 {
+
+					//Don't move, player is in our way
+					fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
+					return
+				}
+
+			}
+		}
+	}
+
+	// Otherwise, move player
+	movePlayerChunk(player.area, newPos, player)
+}
+
+var gameTick uint64
 
 func processGame() {
 
-	var gameTick uint64
 	go func() {
 		defer reportPanic("processGame goroutine")
 		time.Sleep(time.Second)
@@ -43,9 +91,14 @@ func processGame() {
 			processLock.Lock()
 
 			for _, player := range playerList {
-				if player.area == nil {
-					continue
+				if player.dir != DIR_NONE {
+					if gameTick-player.lastDirUpdate > lagThresh {
+						player.dir = DIR_NONE
+					}
+					movePlayer(player)
 				}
+			}
+			for _, player := range playerList {
 
 				wg.Add()
 				go func(player *playerData) {
@@ -63,11 +116,10 @@ func processGame() {
 					for x := -searchChunks; x < searchChunks; x++ {
 						for y := -searchChunks; y < searchChunks; y++ {
 							//Calc chunk pos
-							chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x), Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+							intPos := floorXY(&player.pos)
+							chunkPos := XY{X: uint32(int(intPos.X/chunkDiv) + x), Y: uint32(int(intPos.Y/chunkDiv) + y)}
 
-							player.area.areaLock.RLock()
 							chunk := player.area.Chunks[chunkPos]
-							player.area.areaLock.RUnlock()
 
 							if chunk == nil {
 								continue
@@ -75,9 +127,11 @@ func processGame() {
 
 							//Write players
 							for _, target := range chunk.players {
+								nx := uint32(xyHalf - int(target.pos.X))
+								ny := uint32(xyHalf - int(target.pos.Y))
 								binary.Write(playerBuf, binary.LittleEndian, &target.id)
-								binary.Write(playerBuf, binary.LittleEndian, &target.pos.X)
-								binary.Write(playerBuf, binary.LittleEndian, &target.pos.Y)
+								binary.Write(playerBuf, binary.LittleEndian, &nx)
+								binary.Write(playerBuf, binary.LittleEndian, &ny)
 								binary.Write(playerBuf, binary.LittleEndian, &target.health)
 
 								//Tally players, needed for header
@@ -87,7 +141,7 @@ func processGame() {
 							//Tally output
 							outsize.Add(uint32(numPlayers) * 104)
 
-							//Write world objects
+							//Write dynamic world objects
 							for _, obj := range chunk.WorldObjects {
 								binary.Write(objBuf, binary.LittleEndian, &obj.ItemId)
 								binary.Write(objBuf, binary.LittleEndian, &obj.Pos.X)
@@ -152,8 +206,8 @@ func processGame() {
 	if gTestMode {
 		processLock.Lock()
 		for i := 0; i < 2500; i++ {
-			startLoc := XY{X: uint32(int(xyHalf) + rand.Intn(20000)),
-				Y: uint32(int(xyHalf) + rand.Intn(20000))}
+			startLoc := XYf32{X: float32(rand.Intn(20000)),
+				Y: float32(rand.Intn(20000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
 			playerListLock.Lock()
 			playerList = append(playerList, player)
@@ -164,7 +218,7 @@ func processGame() {
 	}
 }
 
-func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
+func addPlayerToWorld(area *areaData, pos XYf32, player *playerData) {
 	defer reportPanic("addPlayerToWorld")
 
 	//Sanity check
@@ -172,19 +226,21 @@ func addPlayerToWorld(area *areaData, pos XY, player *playerData) {
 		return
 	}
 
+	intPos := floorXY(&pos)
+
 	//Get chunk
-	chunk := getChunk(area, pos)
+	chunk := getChunk(area, intPos)
 
 	//Create chunk if needed
 	if chunk == nil {
-		chunk = assignChunk(area, pos, &chunkData{})
+		chunk = assignChunk(area, intPos, &chunkData{})
 	}
 
 	/* Add player */
 	chunk.players = append(chunk.players, player)
 }
 
-func removePlayerWorld(area *areaData, pos XY, player *playerData) {
+func removePlayerWorld(area *areaData, pos XYf32, player *playerData) {
 	defer reportPanic("removePlayerWorld")
 
 	//Sanity check
@@ -192,14 +248,13 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 		return
 	}
 
+	intPos := floorXY(&pos)
+
 	//Calc chunk pos
-	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
+	chunkPos := XY{X: uint32(intPos.X / chunkDiv), Y: uint32(intPos.Y / chunkDiv)}
 
 	//Get players in chunk
 	chunkPlayers := area.Chunks[chunkPos].players
-
-	//Lock, or we could delete wrong item
-	processLock.Lock()
 
 	//Find player
 	var deleteme int = -1
@@ -219,11 +274,9 @@ func removePlayerWorld(area *areaData, pos XY, player *playerData) {
 		area.Chunks[chunkPos].players = chunkPlayers[:numPlayers]
 	}
 
-	processLock.Unlock()
-
 }
 
-func movePlayer(area *areaData, pos XY, player *playerData) {
+func movePlayerChunk(area *areaData, newPos XYf32, player *playerData) {
 	defer reportPanic("movePlayer")
 
 	//Sanity check
@@ -235,10 +288,10 @@ func movePlayer(area *areaData, pos XY, player *playerData) {
 	removePlayerWorld(area, player.pos, player)
 
 	//Add player to new chunk
-	addPlayerToWorld(area, pos, player)
+	addPlayerToWorld(area, newPos, player)
 
 	//Update player position
-	player.pos = pos
+	player.pos = newPos
 }
 
 func addWorldObject(area *areaData, pos XY, wObject *worldObject) {
@@ -329,7 +382,7 @@ func getChunk(area *areaData, pos XY) *chunkData {
 	}
 
 	//Calc chunk pos
-	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
+	chunkPos := XY{X: uint32(pos.X / chunkDiv), Y: uint32(pos.Y / chunkDiv)}
 
 	area.areaLock.RLock()
 	defer area.areaLock.RUnlock()
@@ -345,7 +398,7 @@ func assignChunk(area *areaData, pos XY, chunk *chunkData) *chunkData {
 		return nil
 	}
 
-	chunkPos := XY{X: pos.X / chunkDiv, Y: pos.Y / chunkDiv}
+	chunkPos := XY{X: uint32(pos.X / chunkDiv), Y: uint32(pos.Y / chunkDiv)}
 
 	area.areaLock.Lock()
 	defer area.areaLock.Unlock()

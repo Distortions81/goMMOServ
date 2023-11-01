@@ -8,7 +8,60 @@ import (
 	"sync"
 )
 
-func distance(a, b XY) float64 {
+const diagSpeed = 0.707
+const walkSpeed = 8
+
+func moveDir(input XYf32, dir DIR) XYf32 {
+
+	pos := input
+
+	switch dir {
+	case DIR_N:
+		pos.Y += walkSpeed
+	case DIR_NE:
+		pos.Y += walkSpeed * diagSpeed
+		pos.X -= walkSpeed * diagSpeed
+	case DIR_E:
+		pos.X -= walkSpeed
+	case DIR_SE:
+		pos.X -= walkSpeed * diagSpeed
+		pos.Y -= walkSpeed * diagSpeed
+	case DIR_S:
+		pos.Y -= walkSpeed
+	case DIR_SW:
+		pos.Y -= walkSpeed * diagSpeed
+		pos.X += walkSpeed * diagSpeed
+	case DIR_W:
+		pos.X += walkSpeed
+	case DIR_NW:
+		pos.Y += walkSpeed * diagSpeed
+		pos.X += walkSpeed * diagSpeed
+	}
+
+	doLog(false, "%2.2f, %2.2f : %2.2f,%2.2f : %v",
+		input.X, input.Y,
+		pos.X, pos.Y,
+		dir)
+	return pos
+}
+
+func floorXY(input *XYf32) XY {
+	return XY{X: uint32(xyHalf - input.X), Y: uint32(xyHalf - input.Y)}
+}
+
+func floatXY(input *XY) XYf32 {
+	return XYf32{X: float32(input.X - xyHalf), Y: float32(input.Y - xyHalf)}
+}
+
+func distanceFloat(a, b XYf32) float64 {
+
+	dx := a.X - b.X
+	dy := a.Y - b.Y
+
+	return math.Sqrt(float64(dx*dx + dy*dy))
+}
+
+func distanceInt(a, b XY) float64 {
 
 	dx := a.X - b.X
 	dy := a.Y - b.Y
