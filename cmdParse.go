@@ -229,11 +229,10 @@ func cmd_init(player *playerData, data []byte) {
 	binary.Write(outbuf, binary.LittleEndian, &player.area.ID)
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 
-	addPlayerToWorld(player.area, player.pos, player)
-
 	//Notify players we joined
 	welcomeStr := fmt.Sprintf("Player-%v joined the game.", player.id)
 	send_chat(welcomeStr)
+
 }
 
 const maxChat = 256

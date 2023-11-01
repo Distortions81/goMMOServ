@@ -254,8 +254,8 @@ func processGame() {
 	if gTestMode {
 		processLock.Lock()
 		for i := 0; i < 30000; i++ {
-			startLoc := XYf32{X: float32(rand.Intn(20000)),
-				Y: float32(rand.Intn(20000))}
+			startLoc := XYf32{X: float32(10000 - rand.Intn(20000)),
+				Y: float32(10000 - rand.Intn(20000))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
 			playerListLock.Lock()
 			playerList = append(playerList, player)
