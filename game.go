@@ -120,7 +120,6 @@ func processGame() {
 							//Calc chunk pos
 							intPos := floorXY(&player.pos)
 							chunkPos := XY{X: uint32(int(intPos.X/chunkDiv) + x), Y: uint32(int(intPos.Y/chunkDiv) + y)}
-
 							chunk := player.area.Chunks[chunkPos]
 
 							if chunk == nil {
@@ -196,8 +195,6 @@ func processGame() {
 					binary.Write(pCountBuf, binary.LittleEndian, &TnumPlayers)
 					binary.Write(oCountBuf, binary.LittleEndian, &TnumObj)
 
-					//doLog(false, "p %v, o %v", TnumPlayers, TnumObj)
-
 					//Write the whole thing
 					playerOut := append(pCountBuf.Bytes(), playerBuf.Bytes()...)
 					objOut := append(oCountBuf.Bytes(), objBuf.Bytes()...)
@@ -244,7 +241,7 @@ func processGame() {
 
 			} else {
 				/*Log we are slower than real-time*/
-				doLog(true, "Unable to keep up: took: %v", took.Round(time.Millisecond))
+				doLog(true, "%v: Unable to keep up: took: %v", gameTick, took.Round(time.Millisecond))
 			}
 
 		}
@@ -253,9 +250,14 @@ func processGame() {
 	/* Spawn players for test mode */
 	if gTestMode {
 		processLock.Lock()
-		for i := 0; i < 30000; i++ {
-			startLoc := XYf32{X: float32(10000 - rand.Intn(20000)),
-				Y: float32(10000 - rand.Intn(20000))}
+
+		testPlayers := 50000
+		space := testPlayers * 2
+		hSpace := space / 2
+
+		for i := 0; i < testPlayers; i++ {
+			startLoc := XYf32{X: float32(hSpace - rand.Intn(space)),
+				Y: float32(hSpace - rand.Intn(space))}
 			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
 			playerListLock.Lock()
 			playerList = append(playerList, player)
