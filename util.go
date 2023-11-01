@@ -8,7 +8,7 @@ import (
 	"sync"
 )
 
-const diagSpeed = 0.70
+const diagSpeed = 0.70710678118
 const walkSpeed = 8
 
 func moveDir(input XYf32, dir DIR) XYf32 {
