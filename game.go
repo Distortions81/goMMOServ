@@ -135,6 +135,7 @@ func processGame() {
 								TnumPlayers += chunk.pBufCount
 								TnumObj += chunk.oBufCount
 								chunk.chunkLock.RUnlock()
+
 								continue
 							}
 							chunk.chunkLock.RUnlock()
@@ -145,6 +146,8 @@ func processGame() {
 
 							//Write players
 							for _, target := range chunk.players {
+
+								//120 bytes with header
 								nx := uint32(xyHalf - int(target.pos.X))
 								ny := uint32(xyHalf - int(target.pos.Y))
 								binary.Write(pBuf, binary.LittleEndian, &target.id)
@@ -159,6 +162,8 @@ func processGame() {
 
 							//Write dynamic world objects
 							for _, obj := range chunk.WorldObjects {
+
+								//112 bytes with header
 								binary.Write(oBuf, binary.LittleEndian, &obj.ItemId)
 								binary.Write(oBuf, binary.LittleEndian, &obj.Pos.X)
 								binary.Write(oBuf, binary.LittleEndian, &obj.Pos.Y)
@@ -175,10 +180,14 @@ func processGame() {
 							playerBuf.Write(chunk.playerBuffer)
 							objBuf.Write(chunk.objBuffer)
 
+							outsize.Add(uint32(120 * TnumPlayers))
+							outsize.Add(uint32(112 * TnumObj))
+
 							chunk.pBufCount = pCount
 							chunk.oBufCount = oCount
 
 							chunk.bufferFrame = gameTick
+							chunk.cleanme = true
 							chunk.chunkLock.Unlock()
 						}
 					}
@@ -200,6 +209,17 @@ func processGame() {
 
 			}
 			wg.Wait()
+
+			// Remove caches of unoccupied areas
+			if gameTick%900 == 0 {
+				for _, area := range areaList {
+					for _, chunk := range area.Chunks {
+						chunk.objBuffer = []byte{}
+						chunk.playerBuffer = []byte{}
+					}
+				}
+			}
+
 			processLock.Unlock()
 
 			//Calculate remaining frame time

@@ -65,4 +65,6 @@ type chunkData struct {
 
 	oBufCount uint16
 	objBuffer []byte
+
+	cleanme bool
 }
