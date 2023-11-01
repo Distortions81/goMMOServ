@@ -15,14 +15,14 @@ type worldObject struct {
 type playerData struct {
 	conn *websocket.Conn
 
-	chunkList []XY
-
 	name   string
 	health int8
 
-	id   uint32
-	pos  XYf32
-	dir  DIR
+	id            uint32
+	pos           XYf32
+	dir           DIR
+	lastDirUpdate uint64
+
 	area *areaData
 }
 

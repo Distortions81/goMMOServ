@@ -275,6 +275,7 @@ func cmd_move(player *playerData, data []byte) {
 
 	//Read direction
 	binary.Read(inbuf, binary.LittleEndian, &player.dir)
+	player.lastDirUpdate = gameTick
 }
 
 func writeToPlayer(player *playerData, header CMD, input []byte) bool {
