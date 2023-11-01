@@ -14,10 +14,10 @@ import (
 )
 
 const (
-	FrameSpeedNS        = 66666666
-	chunkDiv            = 128
-	searchChunks        = 5
-	lagThresh    uint64 = 8
+	FrameSpeedNS = 66666666
+	chunkDiv     = 128
+	searchChunks = 5
+	lagThresh    = 8
 )
 
 var processLock sync.RWMutex
@@ -49,7 +49,7 @@ func movePlayer(player *playerData) {
 				dist := distanceFloat(target.pos, newPos)
 
 				if dist < 10 {
-					fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
+					//fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
 					newPos.X += 24
 					newPos.Y += 24
 
@@ -57,7 +57,7 @@ func movePlayer(player *playerData) {
 				} else if dist < 24 {
 
 					//Don't move, player is in our way
-					fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
+					//fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
 					return
 				}
 
@@ -90,9 +90,10 @@ func processGame() {
 			var outsize atomic.Uint32
 			processLock.Lock()
 
+			//Move player
 			for _, player := range playerList {
 				if player.dir != DIR_NONE {
-					if gameTick-player.lastDirUpdate > lagThresh {
+					if int(gameTick)-int(player.lastDirUpdate) > lagThresh {
 						player.dir = DIR_NONE
 					}
 					movePlayer(player)
@@ -251,14 +252,16 @@ func processGame() {
 	if gTestMode {
 		processLock.Lock()
 
-		testPlayers := 50000
+		testPlayers := 30000
 		space := testPlayers * 2
 		hSpace := space / 2
 
 		for i := 0; i < testPlayers; i++ {
 			startLoc := XYf32{X: float32(hSpace - rand.Intn(space)),
 				Y: float32(hSpace - rand.Intn(space))}
-			player := &playerData{id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100}
+			player := &playerData{
+				id: makePlayerID(), pos: startLoc, area: areaList[0],
+				health: 100, dir: DIR_N, lastDirUpdate: gameTick + 9000}
 			playerListLock.Lock()
 			playerList = append(playerList, player)
 			playerListLock.Unlock()
