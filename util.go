@@ -10,32 +10,32 @@ import (
 
 const diagSpeed = 0.707
 
-func moveDir(pos *XYf32, dir DIR) {
+func moveDir(pos XYf32, dir DIR) XYf32 {
 
 	switch dir {
 	case DIR_N:
-		pos.Y++
+		pos.Y += 1
 	case DIR_NE:
 		pos.Y += diagSpeed
 		pos.X -= diagSpeed
 	case DIR_E:
-		pos.X--
+		pos.X -= 1
 	case DIR_SE:
 		pos.X -= diagSpeed
 		pos.Y -= diagSpeed
 	case DIR_S:
-		pos.Y--
+		pos.Y -= 1
 	case DIR_SW:
 		pos.Y -= diagSpeed
 		pos.X += diagSpeed
 	case DIR_W:
-		pos.X++
+		pos.X += 1
 	case DIR_NW:
 		pos.Y += diagSpeed
 		pos.X += diagSpeed
-	default:
-		return
 	}
+
+	return pos
 }
 
 func floorXY(input *XYf32) XY {

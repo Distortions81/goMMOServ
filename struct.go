@@ -22,6 +22,7 @@ type playerData struct {
 
 	id   uint32
 	pos  XYf32
+	dir  DIR
 	area *areaData
 }
 

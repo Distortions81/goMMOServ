@@ -20,7 +20,55 @@ const (
 )
 
 var processLock sync.RWMutex
-var editLock sync.RWMutex
+
+func movePlayer(player *playerData) {
+
+	newPos := moveDir(player.pos, player.dir)
+	doLog(false, "Move %v, %v to %v, %v",
+		uint32(player.pos.X), uint32(player.pos.Y),
+		uint32(newPos.X), uint32(newPos.Y))
+
+	// Check surrounding area for collisions
+	for x := -1; x < 1; x++ {
+		for y := -1; y < 1; y++ {
+
+			//Get chunk
+			chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
+				Y: uint32(int(player.pos.Y/chunkDiv) + y)}
+			chunk := player.area.Chunks[chunkPos]
+			if chunk == nil {
+				continue
+			}
+
+			//Check chunk for collision
+			for _, target := range chunk.players {
+
+				if target.id == player.id {
+					//Skip self
+					continue
+				}
+				dist := distanceFloat(target.pos, newPos)
+
+				if dist < 10 {
+					fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
+					newPos.X += 24
+					newPos.Y += 24
+
+					return
+				} else if dist < 24 {
+
+					//Don't move, player is in our way
+					fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
+					return
+				}
+
+			}
+		}
+	}
+
+	// Otherwise, move player
+	movePlayerChunk(player.area, newPos, player)
+}
 
 func processGame() {
 
@@ -43,9 +91,11 @@ func processGame() {
 			processLock.Lock()
 
 			for _, player := range playerList {
-				if player.area == nil {
-					continue
+				if player.dir != DIR_NONE {
+					movePlayer(player)
 				}
+			}
+			for _, player := range playerList {
 
 				wg.Add()
 				go func(player *playerData) {
@@ -76,8 +126,8 @@ func processGame() {
 							//Write players
 							for _, target := range chunk.players {
 								binary.Write(playerBuf, binary.LittleEndian, &target.id)
-								binary.Write(playerBuf, binary.LittleEndian, &target.pos.X)
-								binary.Write(playerBuf, binary.LittleEndian, &target.pos.Y)
+								binary.Write(playerBuf, binary.LittleEndian, uint32(target.pos.X))
+								binary.Write(playerBuf, binary.LittleEndian, uint32(target.pos.Y))
 								binary.Write(playerBuf, binary.LittleEndian, &target.health)
 
 								//Tally players, needed for header
@@ -200,9 +250,6 @@ func removePlayerWorld(area *areaData, pos XYf32, player *playerData) {
 	//Get players in chunk
 	chunkPlayers := area.Chunks[chunkPos].players
 
-	//Lock, or we could delete wrong item
-	processLock.Lock()
-
 	//Find player
 	var deleteme int = -1
 	var numPlayers = len(chunkPlayers) - 1
@@ -221,11 +268,9 @@ func removePlayerWorld(area *areaData, pos XYf32, player *playerData) {
 		area.Chunks[chunkPos].players = chunkPlayers[:numPlayers]
 	}
 
-	processLock.Unlock()
-
 }
 
-func movePlayer(area *areaData, pos XYf32, player *playerData) {
+func movePlayerChunk(area *areaData, newPos XYf32, player *playerData) {
 	defer reportPanic("movePlayer")
 
 	//Sanity check
@@ -237,10 +282,10 @@ func movePlayer(area *areaData, pos XYf32, player *playerData) {
 	removePlayerWorld(area, player.pos, player)
 
 	//Add player to new chunk
-	addPlayerToWorld(area, pos, player)
+	addPlayerToWorld(area, newPos, player)
 
 	//Update player position
-	player.pos = pos
+	player.pos = newPos
 }
 
 func addWorldObject(area *areaData, pos XY, wObject *worldObject) {

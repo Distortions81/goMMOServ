@@ -229,8 +229,7 @@ func cmd_init(player *playerData, data []byte) {
 	binary.Write(outbuf, binary.LittleEndian, &player.area.ID)
 	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
 
-	//Use move command to init
-	cmd_move(player, []byte{})
+	addPlayerToWorld(player.area, player.pos, player)
 
 	//Notify players we joined
 	welcomeStr := fmt.Sprintf("Player-%v joined the game.", player.id)
@@ -274,59 +273,8 @@ func cmd_move(player *playerData, data []byte) {
 
 	inbuf := bytes.NewBuffer(data)
 
-	var goDir DIR
-	//Read position
-	binary.Read(inbuf, binary.LittleEndian, &goDir)
-
-	//Put position into XY format
-	var newPos = player.pos
-	moveDir(&newPos, goDir)
-
-	//Check surrounding area for collisions
-	for x := -1; x < 1; x++ {
-		for y := -1; y < 1; y++ {
-
-			//Get chunk
-			chunkPos := XY{X: uint32(int(player.pos.X/chunkDiv) + x),
-				Y: uint32(int(player.pos.Y/chunkDiv) + y)}
-			chunk := player.area.Chunks[chunkPos]
-			if chunk == nil {
-				continue
-			}
-
-			//Check chunk for collision
-			for _, target := range chunk.players {
-
-				if target.id == player.id {
-					//Skip self
-					continue
-				}
-				dist := distanceFloat(target.pos, newPos)
-
-				if dist < 10 {
-					fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
-					newPos.X += 24
-					newPos.Y += 24
-
-					//Fix players stuck inside each other
-					movePlayer(player.area, newPos, player)
-
-					return
-				} else if dist < 24 {
-
-					//Don't move, player is in our way
-					fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
-					return
-				}
-
-			}
-		}
-	}
-
-	//Otherwise, move player
-	movePlayer(player.area, newPos, player)
-
-	//doLog(true, "Move: %v,%v", newPosX, newPosY)
+	//Read direction
+	binary.Read(inbuf, binary.LittleEndian, &player.dir)
 }
 
 func writeToPlayer(player *playerData, header CMD, input []byte) bool {
