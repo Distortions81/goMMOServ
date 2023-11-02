@@ -21,24 +21,24 @@ func newParser(input []byte, player *playerData) {
 	d := CMD(input[0])
 	data := input[1:]
 
-	if d != CMD_MOVE {
+	if d != CMD_Move {
 		cmdName := cmdNames[d]
 		doLog(true, "ID: %v, Received: %v, Data: %v", player.id, cmdName, string(data))
 	}
 
 	switch d {
-	case CMD_INIT: /*INIT*/
+	case CMD_Init:
 		cmd_init(player, data)
 		sendPlayernames(player, false)
-	case CMD_MOVE: /*MOVE*/
+	case CMD_Move:
 		cmd_move(player, data)
-	case CMD_CHAT: /*CHAT*/
+	case CMD_Chat:
 		cmd_chat(player, data)
-	case CMD_COMMAND: /*COMMAND*/
+	case CMD_Command:
 		cmd_command(player, data)
-	case CMD_EDITPLACEITEM: /*PLACE ITEM*/
+	case CMD_EditPlaceItem:
 		cmd_editPlaceItem(player, data)
-	case CMD_EDITDELETEITEM: /*DELETE ITEM*/
+	case CMD_EditDeleteItem:
 		cmd_editDeleteItem(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
@@ -114,7 +114,7 @@ func sendPlayernames(player *playerData, setName bool) {
 		}
 
 		for _, target := range playerList {
-			writeToPlayer(target, CMD_PLAYERNAMES, outbuf.Bytes())
+			writeToPlayer(target, CMD_PlayerNames, outbuf.Bytes())
 		}
 	} else {
 
@@ -149,19 +149,19 @@ func sendPlayernames(player *playerData, setName bool) {
 				binary.Write(outbuf, binary.LittleEndian, &playerRune)
 			}
 		}
-		writeToPlayer(player, CMD_PLAYERNAMES, outbuf.Bytes())
+		writeToPlayer(player, CMD_PlayerNames, outbuf.Bytes())
 	}
 }
 
 func cmd_command(player *playerData, data []byte) {
-	defer reportPanic("cmd_command")
+	defer reportPanic("CMD_Command")
 
 	//Make a string out of the data
 	str := string(data)
 
 	//Check if command has prefix
 	if !strings.HasPrefix(str, "/") {
-		writeToPlayer(player, CMD_COMMAND, []byte("Commmands must begin with: /  (try /help)"))
+		writeToPlayer(player, CMD_Command, []byte("Commmands must begin with: /  (try /help)"))
 		return
 	}
 
@@ -171,18 +171,18 @@ func cmd_command(player *playerData, data []byte) {
 
 	//Check if enough args
 	if numWords < 2 {
-		writeToPlayer(player, CMD_COMMAND, []byte("Keybinds:"))
-		writeToPlayer(player, CMD_COMMAND, []byte("[ \\ ] key -- toggle edit mode, click to place"))
-		writeToPlayer(player, CMD_COMMAND, []byte("[ + ] and [ - ] keys, cycle objects in edit mode"))
-		writeToPlayer(player, CMD_COMMAND, []byte("[ N ], cycle night level"))
-		writeToPlayer(player, CMD_COMMAND, []byte("[ L ], toggle motion smoothing"))
-		writeToPlayer(player, CMD_COMMAND, []byte("[ Z ], toggle fast shadows"))
-		writeToPlayer(player, CMD_COMMAND, []byte("[ESC] exit Chat or Command mode."))
-		writeToPlayer(player, CMD_COMMAND, []byte("[Return] or [Enter] Chat mode"))
-		writeToPlayer(player, CMD_COMMAND, []byte("[ ~ ] Command mode"))
+		writeToPlayer(player, CMD_Command, []byte("Keybinds:"))
+		writeToPlayer(player, CMD_Command, []byte("[ \\ ] key -- toggle edit mode, click to place"))
+		writeToPlayer(player, CMD_Command, []byte("[ + ] and [ - ] keys, cycle objects in edit mode"))
+		writeToPlayer(player, CMD_Command, []byte("[ N ], cycle night level"))
+		writeToPlayer(player, CMD_Command, []byte("[ L ], toggle motion smoothing"))
+		writeToPlayer(player, CMD_Command, []byte("[ Z ], toggle fast shadows"))
+		writeToPlayer(player, CMD_Command, []byte("[ESC] exit Chat or Command mode."))
+		writeToPlayer(player, CMD_Command, []byte("[Return] or [Enter] Chat mode"))
+		writeToPlayer(player, CMD_Command, []byte("[ ~ ] Command mode"))
 
-		writeToPlayer(player, CMD_COMMAND, []byte("Commands:"))
-		writeToPlayer(player, CMD_COMMAND, []byte("/name NewName"))
+		writeToPlayer(player, CMD_Command, []byte("Commands:"))
+		writeToPlayer(player, CMD_Command, []byte("/name NewName"))
 		return
 	}
 
@@ -196,14 +196,14 @@ func cmd_command(player *playerData, data []byte) {
 	//Commands
 	if strings.EqualFold(command, "name") {
 		if allParamLen < 3 {
-			writeToPlayer(player, CMD_COMMAND, []byte("Name not long enough."))
+			writeToPlayer(player, CMD_Command, []byte("Name not long enough."))
 			return
 		} else if allParamLen > 32 {
-			writeToPlayer(player, CMD_COMMAND, []byte("Name too long."))
+			writeToPlayer(player, CMD_Command, []byte("Name too long."))
 			return
 		}
 		player.name = allParams
-		writeToPlayer(player, CMD_COMMAND, []byte("Name set."))
+		writeToPlayer(player, CMD_Command, []byte("Name set."))
 		sendPlayernames(player, true)
 	}
 }
@@ -218,7 +218,7 @@ func cmd_init(player *playerData, data []byte) {
 	binary.Read(inbuf, binary.LittleEndian, &version)
 	if version != protoVersion {
 		doLog(true, "Invalid proto version: %v", version)
-		writeToPlayer(player, CMD_INIT, []byte{})
+		writeToPlayer(player, CMD_Init, []byte{})
 		return
 	}
 
@@ -228,7 +228,7 @@ func cmd_init(player *playerData, data []byte) {
 	//Send player id
 	binary.Write(outbuf, binary.LittleEndian, &player.id)
 	binary.Write(outbuf, binary.LittleEndian, &player.area.ID)
-	writeToPlayer(player, CMD_LOGIN, outbuf.Bytes())
+	writeToPlayer(player, CMD_Login, outbuf.Bytes())
 
 	//Notify players we joined
 	welcomeStr := fmt.Sprintf("Player-%v joined the game.", player.id)
@@ -253,7 +253,7 @@ func cmd_chat(player *playerData, data []byte) {
 		if target.conn == nil {
 			continue
 		}
-		writeToPlayer(target, CMD_CHAT, []byte(pName))
+		writeToPlayer(target, CMD_Chat, []byte(pName))
 	}
 }
 
@@ -264,7 +264,7 @@ func send_chat(data string) {
 		if target.conn == nil {
 			continue
 		}
-		writeToPlayer(target, CMD_CHAT, []byte(data))
+		writeToPlayer(target, CMD_Chat, []byte(data))
 	}
 }
 
@@ -287,7 +287,7 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 	}
 
 	//Log event if not update
-	if header != CMD_UPDATE {
+	if header != CMD_WorldUpdate {
 		cmdName := cmdNames[header]
 		doLog(true, "ID: %v, Sent: %v, Data: %v", player.id, cmdName, string(input))
 	}

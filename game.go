@@ -148,8 +148,8 @@ func processGame() {
 							for _, target := range chunk.players {
 
 								//120 bytes with header
-								nx := uint32(xyHalf - int(target.pos.X))
-								ny := uint32(xyHalf - int(target.pos.Y))
+								nx := uint32(xyCenter - int(target.pos.X))
+								ny := uint32(xyCenter - int(target.pos.Y))
 								binary.Write(pBuf, binary.LittleEndian, &target.id)
 								binary.Write(pBuf, binary.LittleEndian, &nx)
 								binary.Write(pBuf, binary.LittleEndian, &ny)
@@ -200,7 +200,7 @@ func processGame() {
 					playerOut := append(pCountBuf.Bytes(), playerBuf.Bytes()...)
 					objOut := append(oCountBuf.Bytes(), objBuf.Bytes()...)
 
-					writeToPlayer(player, CMD_UPDATE, append(playerOut, objOut...))
+					writeToPlayer(player, CMD_WorldUpdate, append(playerOut, objOut...))
 
 					wg.Done()
 				}(player)
