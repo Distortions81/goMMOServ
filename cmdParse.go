@@ -209,6 +209,7 @@ func cmd_init(player *playerData, data []byte) {
 	if version != protoVersion {
 		doLog(true, "Invalid proto version: %v", version)
 		writeToPlayer(player, CMD_Init, []byte{})
+		removePlayer(player, "invalid version")
 		return
 	}
 	addPlayerToWorld(player.area, player.pos, player)
