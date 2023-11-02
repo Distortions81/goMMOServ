@@ -34,11 +34,11 @@ func newParser(input []byte, player *playerData) {
 		cmd_move(player, data)
 	case CMD_CHAT: /*CHAT*/
 		cmd_chat(player, data)
-	case CMD_COMMAND:
+	case CMD_COMMAND: /*COMMAND*/
 		cmd_command(player, data)
-	case CMD_EDITPLACEITEM:
+	case CMD_EDITPLACEITEM: /*PLACE ITEM*/
 		cmd_editPlaceItem(player, data)
-	case CMD_EDITDELETEITEM:
+	case CMD_EDITDELETEITEM: /*DELETE ITEM*/
 		cmd_editDeleteItem(player, data)
 	default:
 		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
