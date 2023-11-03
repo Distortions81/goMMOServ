@@ -71,7 +71,9 @@ func movePlayer(player *playerData) {
 
 			//Find world object collisions
 			for _, target := range chunk.WorldObjects {
-
+				if target.ItemId != 8 && target.ItemID != 9 {
+					continue
+				}
 				dist := distanceFloat(floatXY(&target.Pos), newPos)
 
 				if dist < 48 {
