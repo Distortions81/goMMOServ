@@ -59,7 +59,7 @@
     <div class="bg">
     <script>
         (async function loadAndRunGoWasm() {
-            await new Promise(r => setTimeout(r, 500));
+            await new Promise(r => setTimeout(r, 1000));
 
             const go = new Go();
             const buffer = pako.ungzip(await (await fetch("main.wasm.gz")).arrayBuffer());
