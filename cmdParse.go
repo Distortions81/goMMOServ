@@ -51,7 +51,11 @@ func newParser(input []byte, player *playerData) {
 }
 
 func cmd_playermode(player *playerData, data []byte) {
+	defer reportPanic("cmd_playermode")
 
+	inbuf := bytes.NewBuffer(data)
+
+	binary.Read(inbuf, binary.LittleEndian, &player.mode)
 }
 
 func cmd_editDeleteItem(player *playerData, data []byte) {

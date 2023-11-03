@@ -55,9 +55,15 @@ func movePlayer(player *playerData) {
 
 					break
 				} else if dist < 24 {
-
-					//Don't move, player is in our way
-					//fmt.Printf("BONK! #%v and #%v (%v p)\n", target.id, player.id, dist)
+					if player.mode == PMODE_ATTACK {
+						if target.health > 0 {
+							target.health--
+						}
+					} else if player.mode == PMODE_HEAL {
+						if target.health < 100 {
+							target.health++
+						}
+					}
 					return
 				}
 

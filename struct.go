@@ -22,6 +22,7 @@ type playerData struct {
 	pos           XYf32
 	dir           DIR
 	lastDirUpdate uint64
+	mode          PMode
 
 	area *areaData
 }
