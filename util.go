@@ -57,6 +57,16 @@ func distanceFloat(a, b XYf32) float64 {
 	return math.Sqrt(float64(dx*dx + dy*dy))
 }
 
+func sameIID(a, b IID) bool {
+	if a.Section != b.Section {
+		return false
+	}
+	if a.Num != b.Num {
+		return false
+	}
+	return true
+}
+
 func distanceInt(a, b XY) float64 {
 
 	dx := a.X - b.X

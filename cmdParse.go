@@ -64,16 +64,19 @@ func cmd_editDeleteItem(player *playerData, data []byte) {
 
 	inbuf := bytes.NewBuffer(data)
 
-	var editPosX, editPosY, editID uint32
+	var sectionID, itemID uint8
+	var editPosX, editPosY uint32
 
-	binary.Read(inbuf, binary.LittleEndian, &editID)
+	binary.Read(inbuf, binary.LittleEndian, &sectionID)
+	binary.Read(inbuf, binary.LittleEndian, &itemID)
 	binary.Read(inbuf, binary.LittleEndian, &editPosX)
 	binary.Read(inbuf, binary.LittleEndian, &editPosY)
 
 	pos := XY{X: editPosX, Y: editPosY}
 
-	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
-	removeWorldObject(areaList[0], pos, editID)
+	doLog(true, "%v:%v %v,%v", sectionID, itemID, editPosX, editPosY)
+
+	removeWorldObject(areaList[0], pos, IID{Section: sectionID, Num: itemID})
 	areaList[0].dirty = true
 }
 
@@ -86,16 +89,17 @@ func cmd_editPlaceItem(player *playerData, data []byte) {
 
 	inbuf := bytes.NewBuffer(data)
 
-	var editPosX, editPosY, editID uint32
+	var editSectionID, editItemID uint8
+	var editPosX, editPosY uint32
 
-	binary.Read(inbuf, binary.LittleEndian, &editID)
+	binary.Read(inbuf, binary.LittleEndian, &editSectionID)
+	binary.Read(inbuf, binary.LittleEndian, &editItemID)
 	binary.Read(inbuf, binary.LittleEndian, &editPosX)
 	binary.Read(inbuf, binary.LittleEndian, &editPosY)
 
 	pos := XY{X: editPosX, Y: editPosY}
-	newObj := &worldObject{uid: uint32(makeObjectID()), Pos: pos, ItemId: editID}
-
-	doLog(true, "%v: %v,%v", editID, editPosX, editPosY)
+	newObj := &worldObject{ID: IID{Section: editSectionID, Num: editItemID}, Pos: pos}
+	doLog(true, "%v:%v %v,%v", editSectionID, editItemID, editPosX, editPosY)
 	addWorldObject(player.area, pos, newObj)
 	player.area.dirty = true
 }

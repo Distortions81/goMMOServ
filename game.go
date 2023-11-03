@@ -65,16 +65,14 @@ func movePlayer(player *playerData) bool {
 
 			//Find world object collisions
 			for _, target := range chunk.WorldObjects {
-				if target.ItemId != 8 && target.ItemId != 9 {
+				if target.ID.Section != 4 {
 					continue
 				}
 				dist := distanceInt(floorXY(&newPos), target.Pos)
 				if dist < 48 {
 					return false
 				}
-
 			}
-
 		}
 	}
 
@@ -179,7 +177,8 @@ func processGame() {
 							for _, obj := range chunk.WorldObjects {
 
 								//112 bytes with header
-								binary.Write(oBuf, binary.LittleEndian, &obj.ItemId)
+								binary.Write(oBuf, binary.LittleEndian, &obj.ID.Section)
+								binary.Write(oBuf, binary.LittleEndian, &obj.ID.Num)
 								binary.Write(oBuf, binary.LittleEndian, &obj.Pos.X)
 								binary.Write(oBuf, binary.LittleEndian, &obj.Pos.Y)
 
@@ -387,7 +386,7 @@ func addWorldObject(area *areaData, pos XY, wObject *worldObject) {
 	chunk.WorldObjects = append(chunk.WorldObjects, wObject)
 }
 
-func removeWorldObject(area *areaData, pos XY, uid uint32) {
+func removeWorldObject(area *areaData, pos XY, id IID) {
 	defer reportPanic("removePlayerWorld")
 
 	//Sanity check
@@ -406,7 +405,7 @@ func removeWorldObject(area *areaData, pos XY, uid uint32) {
 	var deleteme int = -1
 	var numObjs = len(chunk.WorldObjects) - 1
 	for t, target := range chunk.WorldObjects {
-		if target.uid == uid {
+		if sameIID(id, target.ID) {
 			deleteme = t
 			break
 		}
@@ -437,7 +436,7 @@ func moveWorldObject(area *areaData, pos XY, wObject *worldObject) {
 	}
 
 	//Remove player from old chunk
-	removeWorldObject(area, wObject.Pos, wObject.uid)
+	removeWorldObject(area, wObject.Pos, wObject.ID)
 
 	//Add player to new chunk
 	addWorldObject(area, pos, wObject)

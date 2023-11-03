@@ -6,10 +6,16 @@ import (
 	"github.com/gorilla/websocket"
 )
 
+const assetArraySize = 255
+
+type IID struct {
+	Section uint8
+	Num     uint8
+}
+
 type worldObject struct {
-	ItemId uint32
-	Pos    XY
-	uid    uint32
+	ID  IID
+	Pos XY
 }
 
 type playerData struct {
