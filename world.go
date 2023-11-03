@@ -21,7 +21,7 @@ const (
 	dataDir          = "data"
 	areaDir          = "areas"
 	suffix           = ".json"
-	worldSaveSeconds = 30
+	worldSaveSeconds = 5
 )
 
 func autoSaveWorld() {
