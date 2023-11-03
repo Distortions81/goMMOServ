@@ -3,6 +3,7 @@ package main
 import (
 	"bytes"
 	"compress/zlib"
+	"image"
 	"io"
 	"math"
 	"sync"
@@ -45,7 +46,7 @@ func floorXY(input *XYf32) XY {
 }
 
 func floatXY(input *XY) XYf32 {
-	return XYf32{X: float32(input.X - xyCenter), Y: float32(input.Y - xyCenter)}
+	return XYf32{X: float32(xyCenter - input.X), Y: float32(xyCenter - input.Y)}
 }
 
 func distanceFloat(a, b XYf32) float64 {
@@ -119,4 +120,16 @@ func makeObjectID() uint64 {
 
 	objectTopID++
 	return objectTopID
+}
+
+// Check if a position is within a image.Rectangle
+func PosWithinRect(pos XY, rect image.Rectangle, pad uint32) bool {
+	defer reportPanic("PosWithinRect")
+
+	if int(pos.X-pad) <= rect.Max.X && int(pos.X+pad) >= rect.Min.X {
+		if int(pos.Y-pad) <= rect.Max.Y && int(pos.Y+pad) >= rect.Min.Y {
+			return true
+		}
+	}
+	return false
 }
