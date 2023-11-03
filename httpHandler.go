@@ -37,7 +37,7 @@ var (
 
 	maxNetRead           = 1024 * 1000
 	maxConnections int32 = 1000
-	spawnArea            = 512
+	spawnArea            = 256
 	halfArea             = spawnArea / 2
 )
 
