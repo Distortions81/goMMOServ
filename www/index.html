@@ -29,14 +29,39 @@
             }
         }
     </style>
+    <style>
+        body, html {
+          height: 100%;
+          margin: 0;
+        }
+        
+        .bg {
+          /* The image used */
+          background-image: url("loading.jpg");
+        
+          /* Full height */
+          height: 100%; 
+        
+          /* Center and scale the image nicely */
+          background-position: center;
+          background-repeat: no-repeat;
+          background-size: cover;
+        }
+        </style>
+
+
 </head>
 
-<body text="black" bgcolor="black" background="loading.jpg">
-    <div class="barber-pole"><h1>goMMO loading...</h1></div>
+<body text="black" bgcolor="black">
+    <div class="barber-pole">
+        <h1>goMMO loading...</h1>
+    </div>
+    <div class="bg"></div>
     <script>
         (async function loadAndRunGoWasm() {
-            const go = new Go();
+            await new Promise(r => setTimeout(r, 500));
 
+            const go = new Go();
             const buffer = pako.ungzip(await (await fetch("main.wasm.gz")).arrayBuffer());
 
             // A fetched response might be decompressed twice on Firefox.
