@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"log"
 	"net/http"
+	"os"
+	"runtime/pprof"
 	"time"
 )
 
@@ -23,7 +25,22 @@ func main() {
 	bindIP := flag.String("ip", "", "IP to bind to")
 	bindPort := flag.Int("port", 443, "port to bind to for HTTPS")
 	testMode := flag.Bool("test", false, "load many test characters")
+	var cpuprofile = flag.String("cpuprofile", "", "write cpu profile to file")
 	flag.Parse()
+
+	if *cpuprofile != "" {
+		f, err := os.Create(*cpuprofile)
+		if err != nil {
+			log.Fatal(err)
+		}
+		doLog(true, "pprof started")
+		pprof.StartCPUProfile(f)
+		go func() {
+			time.Sleep(time.Minute)
+			pprof.StopCPUProfile()
+			doLog(true, "pprof complete")
+		}()
+	}
 
 	gTestMode = *testMode
 
