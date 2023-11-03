@@ -8,15 +8,15 @@ type PMode uint8
 type DIR uint8
 
 const (
-	// Directions
-	DIR_N DIR = iota
-	DIR_NE
-	DIR_E
-	DIR_SE
-	DIR_S
+	/* Directions */
+	DIR_S DIR = iota
 	DIR_SW
 	DIR_W
 	DIR_NW
+	DIR_N
+	DIR_NE
+	DIR_E
+	DIR_SE
 	DIR_NONE
 )
 
