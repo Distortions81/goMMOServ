@@ -21,14 +21,18 @@ type worldObject struct {
 type playerData struct {
 	conn *websocket.Conn
 
-	name   string
-	health int8
+	name    string
+	health  int16
+	injured bool
 
 	id            uint32
 	pos           XYf32
 	dir           DIR
 	lastDirUpdate uint64
 	mode          PMode
+
+	target   *playerData
+	targeter *playerData
 
 	area *areaData
 }

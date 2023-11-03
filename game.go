@@ -22,9 +22,18 @@ const (
 
 var processLock sync.RWMutex
 
+const playerRadius = 24
+const touchArea = 10
+
 func movePlayer(player *playerData) bool {
 
 	newPos := moveDir(player.pos, player.dir)
+	if player.dir != DIR_NONE {
+		if player.targeter != nil {
+			player.targeter.target = nil
+		}
+		player.target = nil
+	}
 
 	// Check surrounding area for collisions
 	for x := -1; x <= 1; x++ {
@@ -49,15 +58,7 @@ func movePlayer(player *playerData) bool {
 				dist := distanceFloat(target.pos, newPos)
 
 				if dist < 24 {
-					if player.mode == PMODE_ATTACK {
-						if target.health > 0 {
-							target.health--
-						}
-					} else if player.mode == PMODE_HEAL {
-						if target.health < 100 {
-							target.health++
-						}
-					}
+					player.target = target
 					return false
 				}
 
@@ -80,6 +81,31 @@ func movePlayer(player *playerData) bool {
 	movePlayerChunk(player.area, newPos, player)
 
 	return true
+}
+
+func affect(player *playerData) {
+	if player.target == nil || player.target.conn == nil {
+		return
+	}
+	if player.mode == PMODE_ATTACK {
+		if player.target.health > 0 {
+			player.target.health--
+		} else if !player.target.injured {
+			player.target.injured = true
+			send_chat(fmt.Sprintf("%v is injured!", player.target.name))
+			player.target.health = -25
+		}
+	} else if player.mode == PMODE_HEAL {
+		if player.target.injured && player.health > 0 {
+			player.target.injured = false
+		}
+		if player.target.health < 100 {
+			player.target.health++
+		} else {
+			player.target.targeter = nil
+			player.target = nil
+		}
+	}
 }
 
 var gameTick uint64 = 1
@@ -110,7 +136,9 @@ func processGame() {
 						player.dir = DIR_NONE
 					}
 					movePlayer(player)
+
 				}
+				affect(player)
 			}
 			for _, player := range playerList {
 
@@ -273,14 +301,16 @@ func processGame() {
 		for i := 0; i < testPlayers; i++ {
 			startLoc := XYf32{X: float32(hSpace - rand.Intn(space)),
 				Y: float32(hSpace - rand.Intn(space))}
+			pid := makePlayerID()
 			player := &playerData{
-				id: makePlayerID(), pos: startLoc, area: areaList[0],
+				id: pid, name: fmt.Sprintf("Player-%v", pid), pos: startLoc, area: areaList[0],
 				health: 100, dir: DIR_N, lastDirUpdate: gameTick + 9000}
 
 			for !movePlayer(player) {
 				player.pos = XYf32{X: float32(hSpace - rand.Intn(space)),
 					Y: float32(hSpace - rand.Intn(space))}
 			}
+
 			playerListLock.Lock()
 			playerList = append(playerList, player)
 			playerListLock.Unlock()

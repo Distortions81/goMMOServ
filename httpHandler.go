@@ -58,7 +58,8 @@ func handleConnection(conn *websocket.Conn) {
 
 	startLoc := XYf32{X: float32(halfArea - rand.Intn(spawnArea)),
 		Y: float32(halfArea - rand.Intn(spawnArea))}
-	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100, dir: DIR_NONE}
+	pid := makePlayerID()
+	player := &playerData{conn: conn, id: pid, name: fmt.Sprintf("Player-%v", pid), pos: startLoc, area: areaList[0], health: 100, dir: DIR_NONE}
 
 	playerList = append(playerList, player)
 
@@ -85,11 +86,7 @@ func removePlayer(player *playerData, reason string) {
 	}
 
 	var reasonStr string
-	if player.name == "" {
-		reasonStr = fmt.Sprintf("Player-%v left the game. (%v)", player.id, reason)
-	} else {
-		reasonStr = fmt.Sprintf("%v left the game. (%v)", player.name, reason)
-	}
+	reasonStr = fmt.Sprintf("%v left the game. (%v)", player.name, reason)
 
 	killConnection(player, true)
 	removePlayerWorld(player.area, player.pos, player)

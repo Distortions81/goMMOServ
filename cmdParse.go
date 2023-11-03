@@ -245,7 +245,7 @@ func cmd_init(player *playerData, data []byte) {
 	writeToPlayer(player, CMD_Login, outbuf.Bytes())
 
 	//Notify players we joined
-	welcomeStr := fmt.Sprintf("Player-%v joined the game.", player.id)
+	welcomeStr := fmt.Sprintf("%v joined the game.", player.name)
 	send_chat(welcomeStr)
 
 }
@@ -258,10 +258,7 @@ func cmd_chat(player *playerData, data []byte) {
 		return
 	}
 
-	pName := fmt.Sprintf("Player-%v says: %v", player.id, string(data))
-	if player.name != "" {
-		pName = fmt.Sprintf("%v says: %v", player.name, string(data))
-	}
+	pName := fmt.Sprintf("%v says: %v", player.name, string(data))
 
 	for _, target := range playerList {
 		if target.conn == nil {
