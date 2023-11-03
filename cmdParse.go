@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"math/rand"
 	"strings"
 
 	"github.com/gorilla/websocket"
@@ -223,6 +224,13 @@ func cmd_init(player *playerData, data []byte) {
 		return
 	}
 	addPlayerToWorld(player.area, player.pos, player)
+
+	for !movePlayer(player) {
+		tryPos := XYf32{X: float32(halfArea - rand.Intn(spawnArea)),
+			Y: float32(halfArea - rand.Intn(spawnArea))}
+		movePlayerChunk(player.area, tryPos, player)
+		fmt.Println("Spawn blocked... Trying again.")
+	}
 
 	var buf []byte
 	outbuf := bytes.NewBuffer(buf)
