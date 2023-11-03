@@ -36,6 +36,8 @@ func newParser(input []byte, player *playerData) {
 		cmd_chat(player, data)
 	case CMD_Command:
 		cmd_command(player, data)
+	case CMD_PlayerMode:
+		cmd_playermode(player, data)
 	case CMD_EditPlaceItem:
 		cmd_editPlaceItem(player, data)
 	case CMD_EditDeleteItem:
@@ -46,6 +48,10 @@ func newParser(input []byte, player *playerData) {
 
 		return
 	}
+}
+
+func cmd_playermode(player *playerData, data []byte) {
+
 }
 
 func cmd_editDeleteItem(player *playerData, data []byte) {

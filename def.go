@@ -2,10 +2,23 @@ package main
 
 var protoVersion uint16 = 10
 
-// Directions
 type PMode uint8
 
-var playerMode PMode
+// Directions
+type DIR uint8
+
+const (
+	// Directions
+	DIR_N DIR = iota
+	DIR_NE
+	DIR_E
+	DIR_SE
+	DIR_S
+	DIR_SW
+	DIR_W
+	DIR_NW
+	DIR_NONE
+)
 
 const (
 	// Directions
