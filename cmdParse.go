@@ -285,6 +285,10 @@ func send_chat(data string) {
 func cmd_move(player *playerData, data []byte) {
 	defer reportPanic("cmd_move")
 
+	if player.health < 1 {
+		return
+	}
+
 	inbuf := bytes.NewBuffer(data)
 
 	//Read direction
