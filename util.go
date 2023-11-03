@@ -42,11 +42,11 @@ func moveDir(input XYf32, dir DIR) XYf32 {
 }
 
 func floorXY(input *XYf32) XY {
-	return XY{X: uint32(xyCenter - input.X), Y: uint32(xyCenter - input.Y)}
+	return XY{X: uint32(xyCenter - int(input.X)), Y: uint32(xyCenter - int(input.Y))}
 }
 
 func floatXY(input *XY) XYf32 {
-	return XYf32{X: float32(xyCenter - input.X), Y: float32(xyCenter - input.Y)}
+	return XYf32{X: float32(xyCenter + int(input.X)), Y: float32(xyCenter + int(input.Y))}
 }
 
 func distanceFloat(a, b XYf32) float64 {

@@ -22,13 +22,13 @@ const (
 
 var processLock sync.RWMutex
 
-func movePlayer(player *playerData) {
+func movePlayer(player *playerData) bool {
 
 	newPos := moveDir(player.pos, player.dir)
 
 	// Check surrounding area for collisions
-	for x := -1; x < 1; x++ {
-		for y := -1; y < 1; y++ {
+	for x := -1; x <= 1; x++ {
+		for y := -1; y <= 1; y++ {
 
 			//Get chunk
 			intPos := floorXY(&player.pos)
@@ -48,13 +48,7 @@ func movePlayer(player *playerData) {
 				}
 				dist := distanceFloat(target.pos, newPos)
 
-				if dist < 10 {
-					//fmt.Printf("Items inside each other! %v and %v (%v p)\n", target.id, player.id, dist)
-					newPos.X += 32
-					newPos.Y += 32
-
-					break
-				} else if dist < 24 {
+				if dist < 24 {
 					if player.mode == PMODE_ATTACK {
 						if target.health > 0 {
 							target.health--
@@ -64,7 +58,7 @@ func movePlayer(player *playerData) {
 							target.health++
 						}
 					}
-					return
+					return false
 				}
 
 			}
@@ -74,10 +68,9 @@ func movePlayer(player *playerData) {
 				if target.ItemId != 8 && target.ItemId != 9 {
 					continue
 				}
-				dist := distanceFloat(floatXY(&target.Pos), newPos)
-
+				dist := distanceInt(floorXY(&newPos), target.Pos)
 				if dist < 48 {
-					return
+					return false
 				}
 
 			}
@@ -87,6 +80,8 @@ func movePlayer(player *playerData) {
 
 	// Otherwise, move player
 	movePlayerChunk(player.area, newPos, player)
+
+	return true
 }
 
 var gameTick uint64 = 1
@@ -282,6 +277,11 @@ func processGame() {
 			player := &playerData{
 				id: makePlayerID(), pos: startLoc, area: areaList[0],
 				health: 100, dir: DIR_N, lastDirUpdate: gameTick + 9000}
+
+			for !movePlayer(player) {
+				player.pos = XYf32{X: float32(hSpace - rand.Intn(space)),
+					Y: float32(hSpace - rand.Intn(space))}
+			}
 			playerListLock.Lock()
 			playerList = append(playerList, player)
 			playerListLock.Unlock()

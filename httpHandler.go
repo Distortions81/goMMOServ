@@ -37,6 +37,8 @@ var (
 
 	maxNetRead           = 1024 * 1000
 	maxConnections int32 = 1000
+	spawnArea            = 512
+	halfArea             = spawnArea / 2
 )
 
 func redirectToTls(w http.ResponseWriter, r *http.Request) {
@@ -54,8 +56,10 @@ func handleConnection(conn *websocket.Conn) {
 		return
 	}
 
-	startLoc := XYf32{X: float32(rand.Intn(128)), Y: float32(rand.Intn(128))}
+	startLoc := XYf32{X: float32(halfArea - rand.Intn(spawnArea)),
+		Y: float32(halfArea - rand.Intn(spawnArea))}
 	player := &playerData{conn: conn, id: makePlayerID(), pos: startLoc, area: areaList[0], health: 100, dir: DIR_NONE}
+
 	playerList = append(playerList, player)
 
 	conn.SetReadLimit(int64(maxNetRead))
