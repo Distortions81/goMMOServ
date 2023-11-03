@@ -1,21 +1,17 @@
 package main
 
-var protoVersion uint16 = 9
+var protoVersion uint16 = 10
 
-/* Directions */
-type DIR uint8
+// Directions
+type PMode uint8
+
+var playerMode PMode
 
 const (
-	/* Directions */
-	DIR_S DIR = iota
-	DIR_SW
-	DIR_W
-	DIR_NW
-	DIR_N
-	DIR_NE
-	DIR_E
-	DIR_SE
-	DIR_NONE
+	// Directions
+	PMODE_PASSIVE PMode = iota
+	PMODE_ATTACK
+	PMODE_HEAL
 )
 
 // Network commands
@@ -29,6 +25,8 @@ const (
 	CMD_WorldUpdate
 	CMD_Chat
 	CMD_Command
+	CMD_PlayerMode
+
 	CMD_WorldData
 	CMD_PlayerNames
 	CMD_EditPlaceItem
@@ -47,6 +45,8 @@ func init() {
 	cmdNames[CMD_WorldUpdate] = "CMD_WorldUpdate"
 	cmdNames[CMD_Chat] = "CMD_Chat"
 	cmdNames[CMD_Command] = "CMD_Command"
+	cmdNames[CMD_PlayerMode] = "CMD_PlayerMode"
+
 	cmdNames[CMD_WorldData] = "CMD_WorldData"
 	cmdNames[CMD_PlayerNames] = "CMD_PlayerNames"
 	cmdNames[CMD_EditPlaceItem] = "CMD_EditPlaceItem"
