@@ -85,8 +85,7 @@ func removePlayer(player *playerData, reason string) {
 		return
 	}
 
-	var reasonStr string
-	reasonStr = fmt.Sprintf("%v left the game. (%v)", player.name, reason)
+	reasonStr := fmt.Sprintf("%v left the game. (%v)", player.name, reason)
 
 	killConnection(player, true)
 	removePlayerWorld(player.area, player.pos, player)

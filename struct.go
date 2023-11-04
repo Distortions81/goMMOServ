@@ -6,8 +6,6 @@ import (
 	"github.com/gorilla/websocket"
 )
 
-const assetArraySize = 255
-
 type IID struct {
 	Section uint8
 	Num     uint8
