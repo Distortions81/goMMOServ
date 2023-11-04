@@ -60,7 +60,7 @@ func movePlayer(player *playerData) bool {
 
 			//Find world object collisions
 			for _, target := range chunk.WorldObjects {
-				if target.ID.Section != 4 {
+				if target.ID.Section != 3 {
 					continue
 				}
 				dist := distanceInt(floorXY(&newPos), target.Pos)
@@ -97,6 +97,7 @@ func affect(player *playerData) {
 
 				if target.health < 1 {
 					target.injured = true
+					target.dir = DIR_NONE
 					send_chat(fmt.Sprintf("%v is injured!", target.name))
 					target.health -= 50
 
@@ -347,7 +348,7 @@ func processGame() {
 	if gTestMode {
 		processLock.Lock()
 
-		testPlayers := 30000
+		testPlayers := 20000
 		space := testPlayers * 2
 		hSpace := space / 2
 
@@ -359,10 +360,10 @@ func processGame() {
 				id: pid, name: fmt.Sprintf("Player-%v", pid), pos: startLoc, area: areaList[0],
 				health: 100, dir: DIR_N, lastDirUpdate: gameTick + 9000}
 
-			for !movePlayer(player) {
+			/*for !movePlayer(player) {
 				player.pos = XYf32{X: float32(hSpace - rand.Intn(space)),
 					Y: float32(hSpace - rand.Intn(space))}
-			}
+			}*/
 
 			playerListLock.Lock()
 			playerList = append(playerList, player)
