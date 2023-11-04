@@ -44,7 +44,7 @@ func newParser(input []byte, player *playerData) {
 	case CMD_EditDeleteItem:
 		cmd_editDeleteItem(player, data)
 	default:
-		doLog(true, "Received invalid command: 0x%02X, %v", d, string(data))
+		doLog(true, "Received invalid command: 0x%02X, %x", d, (data))
 		removePlayer(player, "INVALID COMMAND")
 
 		return
@@ -307,7 +307,7 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 	//Log event if not update
 	if header != CMD_WorldUpdate {
 		cmdName := cmdNames[header]
-		doLog(true, "ID: %v, Sent: %v, Data: %v", player.id, cmdName, string(input))
+		doLog(true, "ID: %v, Sent: %v, Data: %x", player.id, cmdName, (input))
 	}
 
 	var err error
