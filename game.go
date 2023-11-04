@@ -24,7 +24,6 @@ var processLock sync.RWMutex
 
 const playerSize = 24
 const grace = 10
-const attackSize = 12
 
 func movePlayer(player *playerData) bool {
 
@@ -52,16 +51,9 @@ func movePlayer(player *playerData) bool {
 				}
 				dist := distanceFloat(target.pos, newPos)
 
-				if player.mode == PMODE_ATTACK {
-					if dist < playerSize+attackSize {
-						addTarget(player, target)
-						return false
-					}
-				} else {
-					if dist < playerSize {
-						addTarget(player, target)
-						return false
-					}
+				if dist < playerSize {
+					addTarget(player, target)
+					return false
 				}
 
 			}
@@ -87,18 +79,17 @@ func movePlayer(player *playerData) bool {
 
 func affect(player *playerData) {
 
-	var removeme []*playerData
-	var addme []*playerData
 	if player.effect == EFFECT_ATTACK {
 		player.effect = EFFECT_NONE
 	}
 
 	for _, target := range player.targets {
 		if player.injured || distanceFloat(player.pos, target.pos) > playerSize+grace {
-			removeme = append(removeme, target)
+			removeTarget(player, target)
 			continue
 		}
 		if player.mode == PMODE_ATTACK {
+
 			if !target.injured {
 				if gameTick%12 == 0 {
 					target.health -= 6
@@ -125,20 +116,14 @@ func affect(player *playerData) {
 				}
 				player.effect = EFFECT_HEAL
 				target.effect = EFFECT_HEAL
-				addme = append(addme, target)
+				addTarget(player, target)
 				break
 			} else {
 				player.effect = EFFECT_NONE
 				target.effect = EFFECT_NONE
-				removeme = append(removeme, target)
+				removeTarget(player, target)
 			}
 		}
-	}
-	for _, add := range addme {
-		addTarget(player, add)
-	}
-	for _, rem := range removeme {
-		removeTarget(player, rem)
 	}
 }
 

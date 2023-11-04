@@ -55,7 +55,9 @@ func cmd_playermode(player *playerData, data []byte) {
 	defer reportPanic("cmd_playermode")
 
 	inbuf := bytes.NewBuffer(data)
-	player.targets = []*playerData{}
+	for _, target := range player.targets {
+		removeTarget(player, target)
+	}
 
 	binary.Read(inbuf, binary.LittleEndian, &player.mode)
 }
