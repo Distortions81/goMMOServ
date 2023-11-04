@@ -29,10 +29,17 @@ func movePlayer(player *playerData) bool {
 
 	newPos := moveDir(player.pos, player.dir)
 	if player.dir != DIR_NONE {
+
+		player.effect = EFFECT_NONE
 		if player.targeter != nil {
+			player.targeter.effect = EFFECT_NONE
 			player.targeter.target = nil
 		}
-		player.target = nil
+		if player.target != nil {
+			player.target.effect = EFFECT_NONE
+			player.target = nil
+		}
+
 	}
 
 	// Check surrounding area for collisions
@@ -96,12 +103,17 @@ func affect(player *playerData) {
 			player.target.health = -25
 		}
 	} else if player.mode == PMODE_HEAL {
+		player.effect = EFFECT_HEAL
+		player.target.effect = EFFECT_HEAL
+
 		if player.target.injured && player.health > 0 {
 			player.target.injured = false
 		}
 		if player.target.health < 100 {
 			player.target.health++
 		} else {
+			player.effect = EFFECT_NONE
+			player.target.effect = EFFECT_NONE
 			player.target.targeter = nil
 			player.target = nil
 		}
@@ -195,6 +207,7 @@ func processGame() {
 								binary.Write(pBuf, binary.LittleEndian, &nx)
 								binary.Write(pBuf, binary.LittleEndian, &ny)
 								binary.Write(pBuf, binary.LittleEndian, &target.health)
+								binary.Write(pBuf, binary.LittleEndian, &target.effect)
 
 								//Tally players, needed for header
 								pCount++

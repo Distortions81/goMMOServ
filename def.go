@@ -1,6 +1,6 @@
 package main
 
-var protoVersion uint16 = 10
+var protoVersion uint16 = 11
 
 type PMode uint8
 
@@ -25,6 +25,13 @@ const (
 	PMODE_PASSIVE PMode = iota
 	PMODE_ATTACK
 	PMODE_HEAL
+)
+
+type EFF uint8
+
+const (
+	EFFECT_NONE EFF = iota
+	EFFECT_HEAL
 )
 
 // Network commands

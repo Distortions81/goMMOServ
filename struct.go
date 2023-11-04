@@ -31,6 +31,7 @@ type playerData struct {
 	lastDirUpdate uint64
 	mode          PMode
 
+	effect   EFF
 	target   *playerData
 	targeter *playerData
 
