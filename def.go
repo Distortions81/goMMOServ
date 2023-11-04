@@ -1,6 +1,6 @@
 package main
 
-var protoVersion uint16 = 12
+var protoVersion uint16 = 13
 
 type PMode uint8
 
