@@ -97,7 +97,7 @@ func affect(player *playerData) {
 
 		if player.mode == PMODE_ATTACK { //ATTACKING
 
-			//If the player is not injured do damage to them if correct interval
+			//If the player is not injured, damage them... if correct interval
 			if !hasEffects(t.target, EFFECT_INJURED) {
 				if gameTick%12 == 0 {
 					t.target.health -= 6
@@ -140,7 +140,7 @@ func affect(player *playerData) {
 				break
 			} else {
 
-				//Target's heal is full, remove healing effect.
+				//Target's health is full, remove healing effect.
 				removeTarget(player, t.target)
 			}
 		}
