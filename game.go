@@ -376,7 +376,7 @@ func processGame() {
 	if gTestMode {
 		processLock.Lock()
 
-		testPlayers := 10000
+		testPlayers := 50000
 		space := testPlayers * 2
 		hSpace := space / 2
 

@@ -107,7 +107,7 @@ func cmd_editPlaceItem(player *playerData, data []byte) {
 	player.area.dirty = true
 }
 
-/* This should use a cached list */
+/* TODO This should use a cached list */
 func sendPlayernames(player *playerData, setName bool) {
 	defer reportPanic("sendPlayernames")
 
@@ -167,7 +167,7 @@ func sendPlayernames(player *playerData, setName bool) {
 				binary.Write(outbuf, binary.LittleEndian, &playerRune)
 			}
 		}
-		writeToPlayer(player, CMD_PlayerNames, outbuf.Bytes())
+		writeToPlayer(player, CMD_PlayerNamesComp, CompressZip(outbuf.Bytes()))
 	}
 }
 

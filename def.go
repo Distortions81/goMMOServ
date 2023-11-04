@@ -51,6 +51,7 @@ const (
 
 	CMD_WorldData
 	CMD_PlayerNames
+	CMD_PlayerNamesComp
 	CMD_EditPlaceItem
 	CMD_EditDeleteItem
 )
@@ -71,6 +72,7 @@ func init() {
 
 	cmdNames[CMD_WorldData] = "CMD_WorldData"
 	cmdNames[CMD_PlayerNames] = "CMD_PlayerNames"
+	cmdNames[CMD_PlayerNamesComp] = "CMD_PlayerNamesComp"
 	cmdNames[CMD_EditPlaceItem] = "CMD_EditPlaceItem"
 	cmdNames[CMD_EditDeleteItem] = "CMD_EditDeleteItem"
 }
