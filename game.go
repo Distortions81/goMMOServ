@@ -238,7 +238,7 @@ func processGame() {
 					for x := -searchChunks; x < searchChunks; x++ {
 						for y := -searchChunks; y < searchChunks; y++ {
 
-							var oCount, pCount uint16
+							var pCount uint16
 
 							//Calc chunk pos
 							intPos := floorXY(&player.pos)
@@ -252,18 +252,14 @@ func processGame() {
 							chunk.chunkLock.RLock()
 							if chunk.bufferFrame == gameTick {
 								playerBuf.Write(chunk.playerBuffer)
-								objBuf.Write(chunk.objBuffer)
-
 								TnumPlayers += chunk.pBufCount
-								TnumObj += chunk.oBufCount
 								chunk.chunkLock.RUnlock()
 
 								continue
 							}
 							chunk.chunkLock.RUnlock()
 
-							var cBytes, pBytes []byte
-							oBuf := bytes.NewBuffer(cBytes)
+							var pBytes []byte
 							pBuf := bytes.NewBuffer(pBytes)
 
 							//Write players
@@ -283,36 +279,17 @@ func processGame() {
 							}
 							TnumPlayers += pCount
 
-							//Write dynamic world objects
-							for _, obj := range chunk.WorldObjects {
-
-								//11 bytes with header
-								binary.Write(oBuf, binary.LittleEndian, &obj.ID.Section)
-								binary.Write(oBuf, binary.LittleEndian, &obj.ID.Num)
-								binary.Write(oBuf, binary.LittleEndian, &obj.Pos.X)
-								binary.Write(oBuf, binary.LittleEndian, &obj.Pos.Y)
-
-								oCount++
-							}
-
-							TnumObj += oCount
-
 							chunk.chunkLock.Lock()
 							chunk.playerBuffer = pBuf.Bytes()
-							chunk.objBuffer = oBuf.Bytes()
 
 							playerBuf.Write(chunk.playerBuffer)
-							objBuf.Write(chunk.objBuffer)
-
 							outsize.Add(uint32(16 * TnumPlayers))
-							outsize.Add(uint32(11 * TnumObj))
 
 							chunk.pBufCount = pCount
-							chunk.oBufCount = oCount
-
 							chunk.bufferFrame = gameTick
-							chunk.cleanme = true
 							chunk.chunkLock.Unlock()
+
+							player.visCache = append(player.visCache, visCacheData{pos: chunkPos, lastSaw: gameTick})
 						}
 					}
 
@@ -336,8 +313,17 @@ func processGame() {
 			if gameTick%900 == 0 {
 				for _, area := range areaList {
 					for _, chunk := range area.Chunks {
-						chunk.objBuffer = []byte{}
 						chunk.playerBuffer = []byte{}
+					}
+				}
+				/* Delete old viscache */
+				for _, player := range playerList {
+					visCount := len(player.visCache) - 1
+					for v, vis := range player.visCache {
+						if gameTick-vis.lastSaw > 15 {
+							player.visCache[v] = player.visCache[visCount]
+							player.visCache = player.visCache[:visCount]
+						}
 					}
 				}
 			}

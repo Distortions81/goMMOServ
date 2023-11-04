@@ -28,11 +28,18 @@ type playerData struct {
 	lastDirUpdate uint64
 	mode          PMode
 
+	visCache []visCacheData
+
 	effects EFF
 	targets []*targetingData
 
 	area  *areaData
 	VALID bool
+}
+
+type visCacheData struct {
+	pos     XY
+	lastSaw uint64
 }
 
 type targetingData struct {
@@ -77,9 +84,4 @@ type chunkData struct {
 
 	pBufCount    uint16
 	playerBuffer []byte
-
-	oBufCount uint16
-	objBuffer []byte
-
-	cleanme bool
 }

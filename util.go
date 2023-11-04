@@ -143,3 +143,13 @@ func PosWithinRect(pos XY, rect image.Rectangle, pad uint32) bool {
 	}
 	return false
 }
+
+func justEnteredVis(player *playerData, pos XY) bool {
+	for v, vis := range player.visCache {
+		if vis.pos == pos {
+			player.visCache[v].lastSaw = gameTick
+			return false
+		}
+	}
+	return true
+}
