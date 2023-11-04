@@ -24,6 +24,7 @@ var processLock sync.RWMutex
 
 const playerSize = 24
 const grace = 10
+const attackSize = 12
 
 func movePlayer(player *playerData) bool {
 
@@ -51,9 +52,16 @@ func movePlayer(player *playerData) bool {
 				}
 				dist := distanceFloat(target.pos, newPos)
 
-				if dist < playerSize {
-					addTarget(player, target)
-					return false
+				if player.mode == PMODE_ATTACK {
+					if dist < playerSize+attackSize {
+						addTarget(player, target)
+						return false
+					}
+				} else {
+					if dist < playerSize {
+						addTarget(player, target)
+						return false
+					}
 				}
 
 			}
@@ -81,6 +89,9 @@ func affect(player *playerData) {
 
 	var removeme []*playerData
 	var addme []*playerData
+	if player.effect == EFFECT_ATTACK {
+		player.effect = EFFECT_NONE
+	}
 
 	for _, target := range player.targets {
 		if player.injured || distanceFloat(player.pos, target.pos) > playerSize+grace {
@@ -89,12 +100,17 @@ func affect(player *playerData) {
 		}
 		if player.mode == PMODE_ATTACK {
 			if !target.injured {
-				target.health--
+				if gameTick%12 == 0 {
+					target.health -= 6
+				}
 
 				if target.health < 1 {
 					target.injured = true
 					send_chat(fmt.Sprintf("%v is injured!", target.name))
 					target.health -= 50
+
+				} else {
+					player.effect = EFFECT_ATTACK
 				}
 				break
 			}
@@ -104,7 +120,9 @@ func affect(player *playerData) {
 				target.injured = false
 			}
 			if target.health < 100 {
-				target.health++
+				if gameTick%2 == 0 {
+					target.health++
+				}
 				player.effect = EFFECT_HEAL
 				target.effect = EFFECT_HEAL
 				addme = append(addme, target)

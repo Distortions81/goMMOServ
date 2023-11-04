@@ -32,6 +32,7 @@ type EFF uint8
 const (
 	EFFECT_NONE EFF = iota
 	EFFECT_HEAL
+	EFFECT_ATTACK
 )
 
 // Network commands
