@@ -269,7 +269,7 @@ func processGame() {
 							//Write players
 							for _, target := range chunk.players {
 
-								//120 bytes with header
+								//16 bytes with header
 								nx := uint32(xyCenter - int(target.pos.X))
 								ny := uint32(xyCenter - int(target.pos.Y))
 								binary.Write(pBuf, binary.LittleEndian, &target.id)
@@ -286,7 +286,7 @@ func processGame() {
 							//Write dynamic world objects
 							for _, obj := range chunk.WorldObjects {
 
-								//112 bytes with header
+								//11 bytes with header
 								binary.Write(oBuf, binary.LittleEndian, &obj.ID.Section)
 								binary.Write(oBuf, binary.LittleEndian, &obj.ID.Num)
 								binary.Write(oBuf, binary.LittleEndian, &obj.Pos.X)
@@ -304,8 +304,8 @@ func processGame() {
 							playerBuf.Write(chunk.playerBuffer)
 							objBuf.Write(chunk.objBuffer)
 
-							outsize.Add(uint32(120 * TnumPlayers))
-							outsize.Add(uint32(112 * TnumObj))
+							outsize.Add(uint32(16 * TnumPlayers))
+							outsize.Add(uint32(11 * TnumObj))
 
 							chunk.pBufCount = pCount
 							chunk.oBufCount = oCount
@@ -366,7 +366,7 @@ func processGame() {
 
 			} else {
 				/*Log we are slower than real-time*/
-				doLog(true, "%v: Unable to keep up: took: %v", gameTick, took.Round(time.Millisecond))
+				doLog(true, "Tick: %v: Unable to keep up: took: %v", gameTick, took.Round(time.Millisecond))
 			}
 
 		}
