@@ -22,24 +22,21 @@ const (
 
 var processLock sync.RWMutex
 
-const playerRadius = 24
-const touchArea = 10
-
 func movePlayer(player *playerData) bool {
 
 	newPos := moveDir(player.pos, player.dir)
 	if player.dir != DIR_NONE {
 
-		player.effect = EFFECT_NONE
 		if player.targeter != nil {
 			player.targeter.effect = EFFECT_NONE
 			player.targeter.target = nil
+			player.targeter = nil
 		}
 		if player.target != nil {
 			player.target.effect = EFFECT_NONE
 			player.target = nil
 		}
-
+		player.effect = EFFECT_NONE
 	}
 
 	// Check surrounding area for collisions
@@ -66,6 +63,7 @@ func movePlayer(player *playerData) bool {
 
 				if dist < 24 {
 					player.target = target
+					target.targeter = player
 					return false
 				}
 
@@ -105,6 +103,7 @@ func affect(player *playerData) {
 	} else if player.mode == PMODE_HEAL {
 		player.effect = EFFECT_HEAL
 		player.target.effect = EFFECT_HEAL
+		player.target.targeter = player
 
 		if player.target.injured && player.health > 0 {
 			player.target.injured = false
