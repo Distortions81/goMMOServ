@@ -22,22 +22,12 @@ const (
 
 var processLock sync.RWMutex
 
+const playerSize = 24
+const grace = 10
+
 func movePlayer(player *playerData) bool {
 
 	newPos := moveDir(player.pos, player.dir)
-	if player.dir != DIR_NONE {
-
-		if player.targeter != nil {
-			player.targeter.effect = EFFECT_NONE
-			player.targeter.target = nil
-			player.targeter = nil
-		}
-		if player.target != nil {
-			player.target.effect = EFFECT_NONE
-			player.target = nil
-		}
-		player.effect = EFFECT_NONE
-	}
 
 	// Check surrounding area for collisions
 	for x := -1; x <= 1; x++ {
@@ -61,9 +51,8 @@ func movePlayer(player *playerData) bool {
 				}
 				dist := distanceFloat(target.pos, newPos)
 
-				if dist < 24 {
-					player.target = target
-					target.targeter = player
+				if dist < playerSize {
+					addTarget(player, target)
 					return false
 				}
 
@@ -89,34 +78,82 @@ func movePlayer(player *playerData) bool {
 }
 
 func affect(player *playerData) {
-	if player.target == nil || player.target.conn == nil {
-		return
-	}
-	if player.mode == PMODE_ATTACK {
-		if !player.target.injured {
-			player.target.health--
-		}
-		if player.target.health < 1 {
-			player.target.injured = true
-			send_chat(fmt.Sprintf("%v is injured!", player.target.name))
-			player.target.health = -50
-			player.target = nil
-		}
-	} else if player.mode == PMODE_HEAL {
 
-		if player.target.injured && player.health > 0 {
-			player.target.injured = false
+	var removeme []*playerData
+	var addme []*playerData
+
+	for _, target := range player.targets {
+		if distanceFloat(player.pos, target.pos) > playerSize+grace {
+			removeme = append(removeme, target)
+			continue
 		}
-		if player.target.health < 100 {
-			player.target.health++
-			player.effect = EFFECT_HEAL
-			player.target.effect = EFFECT_HEAL
-		} else {
-			player.effect = EFFECT_NONE
-			player.target.effect = EFFECT_NONE
-			player.target = nil
+
+		if player.mode == PMODE_ATTACK {
+			if !target.injured {
+				target.health--
+
+				if target.health < 1 {
+					target.injured = true
+					send_chat(fmt.Sprintf("%v is injured!", target.name))
+					target.health -= 50
+				}
+			}
+		} else if player.mode == PMODE_HEAL {
+
+			if target.injured && player.health > 0 {
+				target.injured = false
+			}
+			if target.health < 100 {
+				target.health++
+				player.effect = EFFECT_HEAL
+				target.effect = EFFECT_HEAL
+				addme = append(addme, target)
+			} else {
+				player.effect = EFFECT_NONE
+				target.effect = EFFECT_NONE
+				removeme = append(removeme, target)
+			}
 		}
 	}
+	for _, add := range addme {
+		addTarget(player, add)
+	}
+	for _, rem := range removeme {
+		removeTarget(player, rem)
+	}
+}
+
+func addTarget(player, newTarget *playerData) {
+	found := false
+	for _, target := range player.targets {
+		if target.id == newTarget.id {
+			return
+		}
+		found = true
+	}
+	if !found {
+		player.targets = append(player.targets, newTarget)
+	}
+}
+
+func removeTarget(player, removeTarget *playerData) {
+	index := -1
+	for p, target := range player.targets {
+		if target.id == removeTarget.id {
+			index = p
+			break
+		}
+	}
+	if index >= 0 {
+		player.effect = EFFECT_NONE
+		removeTarget.effect = EFFECT_NONE
+
+		//fast-remove
+		listEnd := len(player.targets) - 1
+		player.targets[index] = player.targets[listEnd]
+		player.targets = player.targets[:listEnd]
+	}
+
 }
 
 var gameTick uint64 = 1
@@ -142,12 +179,12 @@ func processGame() {
 
 			//Move player
 			for _, player := range playerList {
+
 				if player.dir != DIR_NONE {
 					if int(gameTick)-int(player.lastDirUpdate) > lagThresh {
 						player.dir = DIR_NONE
 					}
 					movePlayer(player)
-
 				}
 				affect(player)
 			}
@@ -372,7 +409,6 @@ func removePlayerWorld(area *areaData, pos XYf32, player *playerData) {
 
 	//Find player
 	var deleteme int = -1
-	var numPlayers = len(chunkPlayers) - 1
 	for t, target := range chunkPlayers {
 		if target.id == player.id {
 			deleteme = t
@@ -383,6 +419,7 @@ func removePlayerWorld(area *areaData, pos XYf32, player *playerData) {
 	//Sanity check
 	if deleteme >= 0 {
 		//Fast, non-order-preserving delete player from chunk
+		var numPlayers = len(chunkPlayers) - 1
 		area.Chunks[chunkPos].players[deleteme] =
 			area.Chunks[chunkPos].players[numPlayers]
 		area.Chunks[chunkPos].players = chunkPlayers[:numPlayers]
