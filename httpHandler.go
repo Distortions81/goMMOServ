@@ -35,7 +35,7 @@ var (
 	playerList     []*playerData
 	playerListLock sync.Mutex
 
-	maxNetRead           = 1024 * 1000
+	maxNetRead           = 1024 * 10 //10kb
 	maxConnections int32 = 1000
 	spawnArea            = 256
 	halfArea             = spawnArea / 2
