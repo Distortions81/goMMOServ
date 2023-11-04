@@ -93,27 +93,27 @@ func affect(player *playerData) {
 		return
 	}
 	if player.mode == PMODE_ATTACK {
-		if player.target.health > 0 {
+		if !player.target.injured {
 			player.target.health--
-		} else if !player.target.injured {
+		}
+		if player.target.health < 1 {
 			player.target.injured = true
 			send_chat(fmt.Sprintf("%v is injured!", player.target.name))
-			player.target.health = -25
+			player.target.health = -50
+			player.target = nil
 		}
 	} else if player.mode == PMODE_HEAL {
-		player.effect = EFFECT_HEAL
-		player.target.effect = EFFECT_HEAL
-		player.target.targeter = player
 
 		if player.target.injured && player.health > 0 {
 			player.target.injured = false
 		}
 		if player.target.health < 100 {
 			player.target.health++
+			player.effect = EFFECT_HEAL
+			player.target.effect = EFFECT_HEAL
 		} else {
 			player.effect = EFFECT_NONE
 			player.target.effect = EFFECT_NONE
-			player.target.targeter = nil
 			player.target = nil
 		}
 	}
