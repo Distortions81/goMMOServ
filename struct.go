@@ -33,7 +33,8 @@ type playerData struct {
 	effects EFF
 	targets []*targetingData
 
-	area *areaData
+	area  *areaData
+	VALID bool
 }
 
 type targetingData struct {

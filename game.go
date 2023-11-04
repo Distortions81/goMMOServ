@@ -86,8 +86,11 @@ func affect(player *playerData) {
 
 	//Check all our targets
 	for _, t := range player.targets {
-		//If we are injured, or the target is too far away... remove them
-		if hasEffects(player, EFFECT_INJURED) || distanceFloat(player.pos, t.target.pos) > playerSize+grace {
+		//If either player has left the game...
+		//Or we are injured, or the target is too far away... remove effects
+		if !player.VALID || !t.target.VALID ||
+			hasEffects(player, EFFECT_INJURED) ||
+			distanceFloat(player.pos, t.target.pos) > playerSize+grace {
 			removeTarget(player, t.target)
 			continue
 		}
@@ -381,7 +384,7 @@ func processGame() {
 			pid := makePlayerID()
 			player := &playerData{
 				id: pid, name: fmt.Sprintf("Player-%v", pid), pos: startLoc, area: areaList[0],
-				health: 100, dir: DIR_N, lastDirUpdate: gameTick + 9000}
+				health: 100, dir: DIR_N, lastDirUpdate: gameTick + 9000, VALID: true}
 
 			/*for !movePlayer(player) {
 				player.pos = XYf32{X: float32(hSpace - rand.Intn(space)),

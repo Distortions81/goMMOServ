@@ -59,7 +59,7 @@ func handleConnection(conn *websocket.Conn) {
 	startLoc := XYf32{X: float32(halfArea - rand.Intn(spawnArea)),
 		Y: float32(halfArea - rand.Intn(spawnArea))}
 	pid := makePlayerID()
-	player := &playerData{conn: conn, id: pid, name: fmt.Sprintf("Player-%v", pid), pos: startLoc, area: areaList[0], health: 100, dir: DIR_NONE}
+	player := &playerData{conn: conn, id: pid, name: fmt.Sprintf("Player-%v", pid), pos: startLoc, area: areaList[0], health: 100, dir: DIR_NONE, VALID: true}
 
 	playerList = append(playerList, player)
 
@@ -100,6 +100,8 @@ func deletePlayer(player *playerData) {
 	playerListLock.Lock()
 	defer playerListLock.Unlock()
 
+	player.VALID = false
+
 	//Does not preserve order
 	playerListLen := len(playerList) - 1
 	for t, target := range playerList {
@@ -120,6 +122,7 @@ func killConnection(player *playerData, force bool) {
 				numConnections.Add(-1)
 			}
 		}
+		player.VALID = false
 		player.conn = nil
 	}
 }
