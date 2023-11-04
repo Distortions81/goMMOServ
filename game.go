@@ -83,11 +83,10 @@ func affect(player *playerData) {
 	var addme []*playerData
 
 	for _, target := range player.targets {
-		if distanceFloat(player.pos, target.pos) > playerSize+grace {
+		if player.injured || distanceFloat(player.pos, target.pos) > playerSize+grace {
 			removeme = append(removeme, target)
 			continue
 		}
-
 		if player.mode == PMODE_ATTACK {
 			if !target.injured {
 				target.health--
@@ -97,6 +96,7 @@ func affect(player *playerData) {
 					send_chat(fmt.Sprintf("%v is injured!", target.name))
 					target.health -= 50
 				}
+				break
 			}
 		} else if player.mode == PMODE_HEAL {
 
@@ -108,6 +108,7 @@ func affect(player *playerData) {
 				player.effect = EFFECT_HEAL
 				target.effect = EFFECT_HEAL
 				addme = append(addme, target)
+				break
 			} else {
 				player.effect = EFFECT_NONE
 				target.effect = EFFECT_NONE
