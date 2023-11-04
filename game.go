@@ -219,6 +219,8 @@ func processGame() {
 				}
 				affect(player)
 			}
+
+			//Serialize data for transfer / cache
 			for _, player := range playerList {
 
 				wg.Add()
@@ -342,14 +344,14 @@ func processGame() {
 
 			processLock.Unlock()
 
-			//Calculate remaining frame time
-			took := time.Since(loopStart)
-			remaining := (time.Nanosecond * FrameSpeedNS) - took
-
 			//Show bandwidth use
 			if gTestMode && gameTick%450 == 0 && numConnections.Load() > 0 {
 				fmt.Printf("Out: %v mbit\n", outsize.Load()*15/1024/1024)
 			}
+
+			//Calculate remaining frame time
+			took := time.Since(loopStart)
+			remaining := (time.Nanosecond * FrameSpeedNS) - took
 
 			//Sleep if there is remaining frame time
 			if remaining > 0 {
