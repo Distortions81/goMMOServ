@@ -62,7 +62,6 @@ func handleConnection(conn *websocket.Conn) {
 	player := &playerData{conn: conn, id: pid, name: fmt.Sprintf("Player-%v", pid), pos: startLoc, area: areaList[0], health: 100, dir: DIR_NONE, VALID: true}
 
 	playerList = append(playerList, player)
-
 	conn.SetReadLimit(int64(maxNetRead))
 
 	numConnections.Add(1)

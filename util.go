@@ -100,7 +100,7 @@ func CompressZip(data []byte) []byte {
 	defer reportPanic("compressZip")
 
 	var b bytes.Buffer
-	w, err := zlib.NewWriterLevel(&b, zlib.BestCompression)
+	w, err := zlib.NewWriterLevel(&b, zlib.BestSpeed)
 	if err != nil {
 		doLog(true, err.Error())
 		return nil

@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
-	"math/rand"
 	"strings"
 
 	"github.com/gorilla/websocket"
@@ -44,7 +43,7 @@ func newParser(input []byte, player *playerData) {
 	case CMD_EditDeleteItem:
 		cmd_editDeleteItem(player, data)
 	default:
-		doLog(true, "Received invalid command: 0x%02X, %x", d, (data))
+		doLog(true, "Received invalid command: 0x%02X, %vb", d, len(data))
 		removePlayer(player, "INVALID COMMAND")
 
 		return
@@ -107,7 +106,6 @@ func cmd_editPlaceItem(player *playerData, data []byte) {
 	player.area.dirty = true
 }
 
-/* TODO This should use a cached list */
 func sendPlayernames(player *playerData, setName bool) {
 	defer reportPanic("sendPlayernames")
 
@@ -131,11 +129,11 @@ func sendPlayernames(player *playerData, setName bool) {
 			binary.Write(outbuf, binary.LittleEndian, &playerRune)
 		}
 
+		compBuf := CompressZip(outbuf.Bytes())
 		for _, target := range playerList {
-			writeToPlayer(target, CMD_PlayerNames, outbuf.Bytes())
+			writeToPlayer(target, CMD_PlayerNamesComp, compBuf)
 		}
 	} else {
-
 		//Count number of players that have names
 		for _, player := range playerList {
 			if player.name == "" {
@@ -167,6 +165,7 @@ func sendPlayernames(player *playerData, setName bool) {
 				binary.Write(outbuf, binary.LittleEndian, &playerRune)
 			}
 		}
+
 		writeToPlayer(player, CMD_PlayerNamesComp, CompressZip(outbuf.Bytes()))
 	}
 }
@@ -232,12 +231,12 @@ func cmd_init(player *playerData, data []byte) {
 	}
 	addPlayerToWorld(player.area, player.pos, player)
 
-	for !movePlayer(player) {
+	/*for !movePlayer(player) {
 		tryPos := XYf32{X: float32(halfArea - rand.Intn(spawnArea)),
 			Y: float32(halfArea - rand.Intn(spawnArea))}
 		movePlayerChunk(player.area, tryPos, player)
 		fmt.Println("Spawn blocked... Trying again.")
-	}
+	} */
 
 	var buf []byte
 	outbuf := bytes.NewBuffer(buf)
@@ -307,7 +306,7 @@ func writeToPlayer(player *playerData, header CMD, input []byte) bool {
 	//Log event if not update
 	if header != CMD_WorldUpdate {
 		cmdName := cmdNames[header]
-		doLog(true, "ID: %v, Sent: %v, Data: %x", player.id, cmdName, (input))
+		doLog(true, "ID: %v, Sent: %v, Data: %vb", player.id, cmdName, len(input))
 	}
 
 	var err error
