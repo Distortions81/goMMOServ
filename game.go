@@ -52,7 +52,7 @@ func movePlayer(player *playerData) bool {
 				dist := distanceFloat(target.pos, newPos)
 
 				if dist < playerSize {
-					addTarget(player, target)
+					addTarget(player, target, 0, 0)
 					return false
 				}
 
@@ -79,79 +79,102 @@ func movePlayer(player *playerData) bool {
 
 func affect(player *playerData) {
 
-	if player.effect == EFFECT_ATTACK {
-		player.effect = EFFECT_NONE
+	//Reset attack effect, so animation stops if needed
+	if hasEffects(player, EFFECT_ATTACK) {
+		removeEffect(player, EFFECT_ATTACK)
 	}
 
-	for _, target := range player.targets {
-		if player.injured || distanceFloat(player.pos, target.pos) > playerSize+grace {
-			removeTarget(player, target)
+	//Check all our targets
+	for _, t := range player.targets {
+		//If we are injured, or the target is too far away... remove them
+		if hasEffects(player, EFFECT_INJURED) || distanceFloat(player.pos, t.target.pos) > playerSize+grace {
+			removeTarget(player, t.target)
 			continue
 		}
-		if player.mode == PMODE_ATTACK {
 
-			if !target.injured {
+		if player.mode == PMODE_ATTACK { //ATTACKING
+
+			//If the player is not injured do damage to them if correct interval
+			if !hasEffects(t.target, EFFECT_INJURED) {
 				if gameTick%12 == 0 {
-					target.health -= 6
+					t.target.health -= 6
 				}
 
-				if target.health < 1 {
-					target.injured = true
-					target.dir = DIR_NONE
-					send_chat(fmt.Sprintf("%v is injured!", target.name))
-					target.health -= 50
+				//If their health goes to 0, set as injured and stop current movement
+				//Make health negative, so they can't be revived instantly
+				if t.target.health < 1 {
+					setEffect(t.target, EFFECT_INJURED)
+					t.target.dir = DIR_NONE
+					send_chat(fmt.Sprintf("%v is injured!", t.target.name))
+					t.target.health -= 50
 
 				} else {
-					player.effect = EFFECT_ATTACK
+					//Otherwise, start our attack animation
+					setEffect(player, EFFECT_ATTACK)
 				}
 				break
 			}
-		} else if player.mode == PMODE_HEAL {
 
-			if target.injured && target.health > 0 {
-				target.injured = false
+		} else if player.mode == PMODE_HEAL { //HEALING
+
+			//If the target is injured, but their health is now above zero... Remove injured effect
+			if hasEffects(t.target, EFFECT_INJURED) && t.target.health > 0 {
+				removeEffect(t.target, EFFECT_INJURED)
 			}
-			if target.health < 100 {
+			//If their health isn't full yet
+			if t.target.health < 100 {
+				//Increase health every other tick
 				if gameTick%2 == 0 {
-					target.health++
+					t.target.health++
 				}
-				player.effect = EFFECT_HEAL
-				target.effect = EFFECT_HEAL
-				addTarget(player, target)
+
+				t.selfEffects = EFFECT_HEAL
+				t.targetEffects = EFFECT_HEAL
+				setEffect(player, EFFECT_HEAL)
+				setEffect(t.target, EFFECT_HEAL)
+
+				//Stop here, no multi-target
 				break
 			} else {
-				player.effect = EFFECT_NONE
-				target.effect = EFFECT_NONE
-				removeTarget(player, target)
+
+				//Target's heal is full, remove healing effect.
+				removeTarget(player, t.target)
 			}
 		}
 	}
 }
 
-func addTarget(player, newTarget *playerData) {
+// Adds to list, applies effects
+// Does not add to list (or apply effects) if already in list.
+func addTarget(player, newTarget *playerData, selfEffects, targetEffects EFF) {
 	found := false
-	for _, target := range player.targets {
-		if target.id == newTarget.id {
+	for _, t := range player.targets {
+		if t.target.id == newTarget.id {
 			return
 		}
 		found = true
 	}
 	if !found {
-		player.targets = append(player.targets, newTarget)
+		setEffect(player, selfEffects)
+		setEffect(newTarget, targetEffects)
+		player.targets = append(player.targets,
+			&targetingData{target: newTarget, selfEffects: selfEffects, targetEffects: targetEffects})
 	}
 }
 
+// Removes target and removes effects
 func removeTarget(player, removeTarget *playerData) {
 	index := -1
 	for p, target := range player.targets {
-		if target.id == removeTarget.id {
+		if target.target.id == removeTarget.id {
 			index = p
 			break
 		}
 	}
 	if index >= 0 {
-		player.effect = EFFECT_NONE
-		removeTarget.effect = EFFECT_NONE
+		t := player.targets[index]
+		removeEffect(player, t.selfEffects)
+		removeEffect(t.target, t.targetEffects)
 
 		//fast-remove
 		listEnd := len(player.targets) - 1
@@ -248,7 +271,7 @@ func processGame() {
 								binary.Write(pBuf, binary.LittleEndian, &nx)
 								binary.Write(pBuf, binary.LittleEndian, &ny)
 								binary.Write(pBuf, binary.LittleEndian, &target.health)
-								binary.Write(pBuf, binary.LittleEndian, &target.effect)
+								binary.Write(pBuf, binary.LittleEndian, &target.effects)
 
 								//Tally players, needed for header
 								pCount++

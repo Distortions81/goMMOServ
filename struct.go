@@ -21,9 +21,8 @@ type worldObject struct {
 type playerData struct {
 	conn *websocket.Conn
 
-	name    string
-	health  int16
-	injured bool
+	name   string
+	health int16
 
 	id            uint32
 	pos           XYf32
@@ -31,10 +30,16 @@ type playerData struct {
 	lastDirUpdate uint64
 	mode          PMode
 
-	effect  EFF
-	targets []*playerData
+	effects EFF
+	targets []*targetingData
 
 	area *areaData
+}
+
+type targetingData struct {
+	target        *playerData
+	targetEffects EFF
+	selfEffects   EFF
 }
 
 type XY struct {
