@@ -100,7 +100,7 @@ func affect(player *playerData) {
 			}
 		} else if player.mode == PMODE_HEAL {
 
-			if target.injured && player.health > 0 {
+			if target.injured && target.health > 0 {
 				target.injured = false
 			}
 			if target.health < 100 {
