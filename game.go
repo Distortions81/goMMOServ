@@ -254,7 +254,6 @@ func processGame() {
 								playerBuf.Write(chunk.playerBuffer)
 								TnumPlayers += chunk.pBufCount
 								chunk.chunkLock.RUnlock()
-
 								continue
 							}
 							chunk.chunkLock.RUnlock()

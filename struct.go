@@ -82,6 +82,10 @@ type chunkData struct {
 
 	bufferFrame uint64
 
+	wBufCount      uint16
+	worldObjBuffer []byte
+	worldObjDirty  bool
+
 	pBufCount    uint16
 	playerBuffer []byte
 }
