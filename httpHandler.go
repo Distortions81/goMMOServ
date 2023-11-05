@@ -106,6 +106,7 @@ func deletePlayer(player *playerData) {
 		if target.id == player.id {
 			playerList[t] = playerList[playerListLen]
 			playerList = playerList[:playerListLen]
+			playerListLen--
 		}
 	}
 }
