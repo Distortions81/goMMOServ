@@ -11,7 +11,7 @@ import (
 const (
 	hdFileName = "heapDump.dat"
 	pLogName   = "panic.log"
-	version    = "0.0.8"
+	version    = "0.0.14"
 	buildInfo  = "dev"
 )
 
