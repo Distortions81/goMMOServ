@@ -1,0 +1,9 @@
+*.pem
+*.key
+log/
+goMMOServ
+panic.log
+heapDump.dat
+www/main.wasm.gz
+data/areas/*.json
+data/*.json
